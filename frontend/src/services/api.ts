@@ -132,6 +132,11 @@ export const farriersApi = {
     return response.data;
   },
 
+  updateSchedule: async (id: number, data: { day_of_week?: number; start_time?: string; end_time?: string; is_available?: boolean }) => {
+    const response = await api.put(`/farriers/schedules/${id}`, data);
+    return response.data;
+  },
+
   deleteSchedule: async (id: number): Promise<void> => {
     await api.delete(`/farriers/schedules/${id}`);
   },

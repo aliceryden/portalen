@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { Calendar, Clock, MapPin, ArrowRight, Check } from 'lucide-react';
+import { Calendar, Clock, MapPin, ArrowRight, ArrowLeft, Check } from 'lucide-react';
 import BackButton from '../../components/BackButton';
 import toast from 'react-hot-toast';
 import { farriersApi, horsesApi, bookingsApi } from '../../services/api';
@@ -69,15 +69,31 @@ export default function NewBooking() {
   const onSubmit = (data: BookingFormData) => {
     if (!selectedService || !selectedDate || !selectedTime) return;
 
-    const scheduledDate = new Date(selectedDate);
+    // Create date in local timezone - we want to preserve the exact time the user selected
+    const year = selectedDate.getFullYear();
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(selectedDate.getDate()).padStart(2, '0');
     const [hours, minutes] = selectedTime.split(':').map(Number);
-    scheduledDate.setHours(hours, minutes, 0, 0);
+    const hour = String(hours).padStart(2, '0');
+    const minute = String(minutes).padStart(2, '0');
+    
+    // Create a temporary date to get timezone offset
+    const tempDate = new Date(`${year}-${month}-${day}T${hour}:${minute}:00`);
+    const offsetMinutes = tempDate.getTimezoneOffset();
+    const offsetHours = Math.floor(Math.abs(offsetMinutes) / 60);
+    const offsetMins = Math.abs(offsetMinutes) % 60;
+    const offsetSign = offsetMinutes <= 0 ? '+' : '-';
+    const offsetString = `${offsetSign}${String(offsetHours).padStart(2, '0')}:${String(offsetMins).padStart(2, '0')}`;
+    
+    // Send with timezone offset - this tells backend the exact local time
+    // Backend should store this as-is or convert appropriately
+    const dateWithOffset = `${year}-${month}-${day}T${hour}:${minute}:00${offsetString}`;
 
     bookingMutation.mutate({
       farrier_id: Number(farrierId),
       horse_id: data.horse_id,
       service_type: selectedService.name,
-      scheduled_date: scheduledDate.toISOString(),
+      scheduled_date: dateWithOffset,
       duration_minutes: selectedService.duration,
       location_address: selectedHorse?.stable_address,
       location_city: selectedHorse?.stable_city,
@@ -236,9 +252,14 @@ export default function NewBooking() {
                 ))}
               </div>
             ) : (
-              <p className="text-earth-500 text-center py-8">
-                Du behöver registrera en häst först
-              </p>
+              <div className="text-center py-8">
+                <p className="text-earth-500 mb-4">
+                  Du behöver registrera en häst först
+                </p>
+                <Link to="/owner/horses" className="btn-primary">
+                  Lägg till häst
+                </Link>
+              </div>
             )}
             {errors.horse_id && (
               <p className="text-red-500 text-sm mt-2">{errors.horse_id.message}</p>

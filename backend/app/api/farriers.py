@@ -11,7 +11,7 @@ from app.models.farrier import Farrier, FarrierService, FarrierSchedule, Farrier
 from app.schemas.farrier import (
     FarrierCreate, FarrierUpdate, FarrierResponse, FarrierListResponse,
     FarrierServiceCreate, FarrierServiceResponse,
-    FarrierScheduleCreate, FarrierScheduleResponse,
+    FarrierScheduleCreate, FarrierScheduleUpdate, FarrierScheduleResponse,
     FarrierAreaCreate, FarrierAreaResponse,
     FarrierSearchFilters
 )
@@ -272,6 +272,36 @@ async def add_schedule(
     farrier = db.query(Farrier).filter(Farrier.user_id == current_user.id).first()
     schedule = FarrierSchedule(farrier_id=farrier.id, **schedule_data.model_dump())
     db.add(schedule)
+    db.commit()
+    db.refresh(schedule)
+    return schedule
+
+
+@router.put("/schedules/{schedule_id}", response_model=FarrierScheduleResponse)
+async def update_schedule(
+    schedule_id: int,
+    schedule_data: FarrierScheduleUpdate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Uppdatera schema"""
+    if current_user.role != "farrier":
+        raise HTTPException(status_code=403, detail="Endast hovslagare")
+    
+    farrier = db.query(Farrier).filter(Farrier.user_id == current_user.id).first()
+    schedule = db.query(FarrierSchedule).filter(
+        FarrierSchedule.id == schedule_id,
+        FarrierSchedule.farrier_id == farrier.id
+    ).first()
+    
+    if not schedule:
+        raise HTTPException(status_code=404, detail="Schema hittades inte")
+    
+    # Uppdatera endast de fält som skickats med
+    update_data = schedule_data.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(schedule, field, value)
+    
     db.commit()
     db.refresh(schedule)
     return schedule

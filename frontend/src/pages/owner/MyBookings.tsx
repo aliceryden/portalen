@@ -6,7 +6,7 @@ import BackButton from '../../components/BackButton';
 import toast from 'react-hot-toast';
 import { bookingsApi, reviewsApi } from '../../services/api';
 import type { Booking } from '../../types';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { sv } from 'date-fns/locale';
 
 const STATUS_MAP: Record<string, { label: string; class: string }> = {
@@ -119,6 +119,12 @@ export default function MyBookings() {
                     <span className={STATUS_MAP[booking.status]?.class}>
                       {STATUS_MAP[booking.status]?.label}
                     </span>
+                    {booking.status === 'completed' && !booking.has_review && (
+                      <span className="badge-warning text-xs animate-pulse">
+                        <Star className="w-3 h-3 inline mr-1" />
+                        Lämna omdöme
+                      </span>
+                    )}
                     <span className="text-earth-500 text-sm">
                       #{booking.id}
                     </span>
@@ -131,11 +137,11 @@ export default function MyBookings() {
                   <div className="flex flex-wrap gap-4 text-sm text-earth-600">
                     <span className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
-                      {format(new Date(booking.scheduled_date), 'd MMMM yyyy', { locale: sv })}
+                      {format(parseISO(booking.scheduled_date.endsWith('Z') || booking.scheduled_date.includes('+') ? booking.scheduled_date : booking.scheduled_date + 'Z'), 'd MMMM yyyy', { locale: sv })}
                     </span>
                     <span className="flex items-center gap-1">
                       <Clock className="w-4 h-4" />
-                      {format(new Date(booking.scheduled_date), 'HH:mm', { locale: sv })}
+                      {format(parseISO(booking.scheduled_date.endsWith('Z') || booking.scheduled_date.includes('+') ? booking.scheduled_date : booking.scheduled_date + 'Z'), 'HH:mm', { locale: sv })}
                     </span>
                     {booking.location_city && (
                       <span className="flex items-center gap-1">
@@ -173,6 +179,19 @@ export default function MyBookings() {
                   <div className="flex gap-2 justify-end">
                     {booking.status === 'completed' && (
                       <>
+                        {!booking.has_review && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setReviewModal(booking);
+                            }}
+                            className="btn-primary text-sm animate-pulse"
+                            title="Lämna omdöme om din upplevelse"
+                          >
+                            <Star className="w-4 h-4 fill-current" />
+                            Lämna omdöme
+                          </button>
+                        )}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -183,18 +202,6 @@ export default function MyBookings() {
                           <Eye className="w-4 h-4" />
                           Visa detaljer
                         </button>
-                        {!booking.has_review && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setReviewModal(booking);
-                            }}
-                            className="btn-primary text-sm"
-                          >
-                            <Star className="w-4 h-4" />
-                            Lämna omdöme
-                          </button>
-                        )}
                       </>
                     )}
                     
@@ -232,8 +239,19 @@ export default function MyBookings() {
 
       {/* View Booking Details Modal */}
       {viewBooking && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-slide-up">
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={(e) => {
+            // Close modal when clicking outside (on the backdrop)
+            if (e.target === e.currentTarget) {
+              setViewBooking(null);
+            }
+          }}
+        >
+          <div 
+            className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-slide-up"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="p-6 border-b border-earth-100 flex items-center justify-between">
               <h2 className="font-display text-xl font-semibold text-earth-900">
                 Bokningsdetaljer
@@ -276,7 +294,7 @@ export default function MyBookings() {
                       Datum & Tid
                     </p>
                     <p className="font-medium text-earth-900">
-                      {format(new Date(viewBooking.scheduled_date), 'd MMMM yyyy HH:mm', { locale: sv })}
+                      {format(parseISO(viewBooking.scheduled_date.endsWith('Z') || viewBooking.scheduled_date.includes('+') ? viewBooking.scheduled_date : viewBooking.scheduled_date + 'Z'), 'd MMMM yyyy HH:mm', { locale: sv })}
                     </p>
                   </div>
                   <div>
@@ -389,6 +407,17 @@ export default function MyBookings() {
               {/* Review button if completed and no review */}
               {viewBooking.status === 'completed' && !viewBooking.has_review && (
                 <div className="pt-4 border-t border-earth-100">
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                    <div className="flex items-start gap-3">
+                      <Star className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <h4 className="font-medium text-amber-900 mb-1">Lämna omdöme</h4>
+                        <p className="text-sm text-amber-700">
+                          Din bokning är klar! Hjälp andra hästägare genom att dela din upplevelse med {viewBooking.farrier_name}.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                   <button
                     onClick={() => {
                       setViewBooking(null);
@@ -396,7 +425,7 @@ export default function MyBookings() {
                     }}
                     className="btn-primary w-full"
                   >
-                    <Star className="w-5 h-5" />
+                    <Star className="w-5 h-5 fill-current" />
                     Lämna omdöme
                   </button>
                 </div>
@@ -408,8 +437,19 @@ export default function MyBookings() {
 
       {/* Review Modal */}
       {reviewModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md animate-slide-up">
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={(e) => {
+            // Close modal when clicking outside (on the backdrop)
+            if (e.target === e.currentTarget) {
+              setReviewModal(null);
+            }
+          }}
+        >
+          <div 
+            className="bg-white rounded-2xl w-full max-w-md animate-slide-up"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="p-6 border-b border-earth-100 flex items-center justify-between">
               <h2 className="font-display text-xl font-semibold text-earth-900">
                 Lämna omdöme

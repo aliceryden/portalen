@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Calendar, Clock, Star, TrendingUp, CheckCircle, AlertCircle, Users } from 'lucide-react';
-import { bookingsApi, farriersApi } from '../../services/api';
+import { bookingsApi, farriersApi, reviewsApi } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
-import { format, isToday, isTomorrow } from 'date-fns';
+import { format, isToday, isTomorrow, parseISO } from 'date-fns';
 import { sv } from 'date-fns/locale';
 
 export default function FarrierDashboard() {
@@ -26,6 +26,13 @@ export default function FarrierDashboard() {
   const { data: myProfile, isLoading: profileLoading } = useQuery({
     queryKey: ['farrier-profile', myProfileListItem?.id],
     queryFn: () => farriersApi.get(myProfileListItem!.id),
+    enabled: !!myProfileListItem?.id,
+  });
+
+  // Get reviews for this farrier
+  const { data: reviews } = useQuery({
+    queryKey: ['farrier-reviews', myProfileListItem?.id],
+    queryFn: () => reviewsApi.listForFarrier(myProfileListItem!.id),
     enabled: !!myProfileListItem?.id,
   });
 
@@ -162,6 +169,69 @@ export default function FarrierDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Recent Reviews */}
+      {reviews && reviews.length > 0 && (
+        <div className="card mb-8">
+          <div className="p-6 border-b border-earth-100 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Star className="w-5 h-5 text-amber-500 fill-current" />
+              <h2 className="font-display text-xl font-semibold text-earth-900">
+                Senaste omdömen
+              </h2>
+            </div>
+            <Link to={`/farriers/${myProfileListItem?.id}`} className="text-brand-600 hover:text-brand-700 text-sm font-medium">
+              Visa alla →
+            </Link>
+          </div>
+          
+          <div className="p-6">
+            <div className="space-y-4">
+              {reviews.slice(0, 3).map((review) => (
+                <div key={review.id} className="p-4 bg-earth-50 rounded-xl">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      {review.author_image ? (
+                        <img 
+                          src={review.author_image.startsWith('http') ? review.author_image : `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}${review.author_image}`} 
+                          alt="" 
+                          className="w-8 h-8 rounded-full" 
+                        />
+                      ) : (
+                        <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center">
+                          <span className="text-xs text-earth-600">{review.author_name?.[0]}</span>
+                        </div>
+                      )}
+                      <span className="font-medium text-earth-900">{review.author_name}</span>
+                    </div>
+                    <span className="text-sm text-earth-500">
+                      {format(parseISO(review.created_at), 'd MMM yyyy', { locale: sv })}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 mb-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={`w-4 h-4 ${
+                          star <= review.rating
+                            ? 'text-amber-400 fill-current'
+                            : 'text-earth-300'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  {review.title && (
+                    <h4 className="font-medium text-earth-900 mb-1">{review.title}</h4>
+                  )}
+                  {review.comment && (
+                    <p className="text-sm text-earth-600">{review.comment}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-2 gap-8">
         {/* Today's Schedule */}

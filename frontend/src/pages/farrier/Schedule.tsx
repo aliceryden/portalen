@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2, Clock, MapPin, Calendar as CalendarIcon } from 'lucide-react';
+import { Plus, Trash2, Clock, MapPin, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Edit2, X } from 'lucide-react';
 import BackButton from '../../components/BackButton';
 import toast from 'react-hot-toast';
 import { farriersApi, bookingsApi } from '../../services/api';
@@ -18,8 +18,12 @@ export default function FarrierSchedule() {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
   
+  const [currentWeekOffset, setCurrentWeekOffset] = useState(0);
+  
+  const [editingSchedule, setEditingSchedule] = useState<{ id: number; day_of_week: number; start_time: string; end_time: string } | null>(null);
+  
   const [newSchedule, setNewSchedule] = useState({
-    day_of_week: 0,
+    selectedDays: [] as number[],
     start_time: '08:00',
     end_time: '17:00',
   });
@@ -60,6 +64,17 @@ export default function FarrierSchedule() {
     onError: () => toast.error('Kunde inte lägga till schema'),
   });
 
+  const updateScheduleMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: { start_time: string; end_time: string } }) =>
+      farriersApi.updateSchedule(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['farrier-profile'] });
+      toast.success('Schema uppdaterat');
+      setEditingSchedule(null);
+    },
+    onError: () => toast.error('Kunde inte uppdatera schema'),
+  });
+
   const deleteScheduleMutation = useMutation({
     mutationFn: farriersApi.deleteSchedule,
     onSuccess: () => {
@@ -86,12 +101,37 @@ export default function FarrierSchedule() {
     },
   });
 
-  const handleAddSchedule = () => {
-    addScheduleMutation.mutate({
-      day_of_week: newSchedule.day_of_week,
-      start_time: newSchedule.start_time,
-      end_time: newSchedule.end_time,
-    });
+  const handleAddSchedule = async () => {
+    if (newSchedule.selectedDays.length === 0) {
+      toast.error('Välj minst en dag');
+      return;
+    }
+    
+    try {
+      // Add schedule for each selected day
+      const promises = newSchedule.selectedDays.map(dayOfWeek => 
+        addScheduleMutation.mutateAsync({
+          day_of_week: dayOfWeek,
+          start_time: newSchedule.start_time,
+          end_time: newSchedule.end_time,
+        })
+      );
+      
+      await Promise.all(promises);
+      toast.success(`${newSchedule.selectedDays.length} schema tillagda`);
+      setNewSchedule({ selectedDays: [], start_time: '08:00', end_time: '17:00' });
+    } catch (error) {
+      // Error is already handled by mutation
+    }
+  };
+
+  const toggleDay = (dayIndex: number) => {
+    setNewSchedule(prev => ({
+      ...prev,
+      selectedDays: prev.selectedDays.includes(dayIndex)
+        ? prev.selectedDays.filter(d => d !== dayIndex)
+        : [...prev.selectedDays, dayIndex]
+    }));
   };
 
   const handleAddArea = () => {
@@ -99,10 +139,15 @@ export default function FarrierSchedule() {
     addAreaMutation.mutate(newArea);
   };
 
-  // Get current week dates
+  // Get current week dates based on offset
   const today = new Date();
-  const weekStart = startOfWeek(today, { weekStartsOn: 1 }); // Start on Monday
+  const baseWeekStart = startOfWeek(today, { weekStartsOn: 1 }); // Start on Monday
+  const weekStart = addDays(baseWeekStart, currentWeekOffset * 7);
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  
+  const goToPreviousWeek = () => setCurrentWeekOffset(prev => prev - 1);
+  const goToNextWeek = () => setCurrentWeekOffset(prev => prev + 1);
+  const goToCurrentWeek = () => setCurrentWeekOffset(0);
 
   // Group bookings by date
   const bookingsByDate = (bookings || []).reduce((acc, booking) => {
@@ -179,11 +224,36 @@ export default function FarrierSchedule() {
         <div className="lg:col-span-1">
           <div className="card sticky top-24">
             <div className="p-6 border-b border-earth-100">
-              <h2 className="font-display text-xl font-semibold text-earth-900 flex items-center gap-2">
-                <CalendarIcon className="w-5 h-5 text-brand-500" />
-                Veckoplanering
-              </h2>
-              <p className="text-earth-500 text-sm mt-1">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="font-display text-xl font-semibold text-earth-900 flex items-center gap-2">
+                  <CalendarIcon className="w-5 h-5 text-brand-500" />
+                  Veckoplanering
+                </h2>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={goToPreviousWeek}
+                    className="p-1.5 hover:bg-earth-100 rounded-lg transition-colors"
+                    title="Föregående vecka"
+                  >
+                    <ChevronLeft className="w-4 h-4 text-earth-600" />
+                  </button>
+                  <button
+                    onClick={goToCurrentWeek}
+                    className="px-2 py-1 text-xs text-earth-600 hover:bg-earth-100 rounded-lg transition-colors"
+                    title="Gå till denna vecka"
+                  >
+                    Idag
+                  </button>
+                  <button
+                    onClick={goToNextWeek}
+                    className="p-1.5 hover:bg-earth-100 rounded-lg transition-colors"
+                    title="Nästa vecka"
+                  >
+                    <ChevronRight className="w-4 h-4 text-earth-600" />
+                  </button>
+                </div>
+              </div>
+              <p className="text-earth-500 text-sm">
                 {format(weekStart, 'd MMM', { locale: sv })} - {format(addDays(weekStart, 6), 'd MMM yyyy', { locale: sv })}
               </p>
             </div>
@@ -216,6 +286,20 @@ export default function FarrierSchedule() {
                         </span>
                       )}
                     </div>
+
+                    {/* Show working hours for this day */}
+                    {fullProfile?.schedules?.some(s => s.day_of_week === index && s.is_available) && (
+                      <div className="mb-2 pb-2 border-b border-earth-200">
+                        {fullProfile.schedules
+                          .filter(s => s.day_of_week === index && s.is_available)
+                          .map((schedule) => (
+                            <div key={schedule.id} className="text-xs text-brand-600 font-medium">
+                              <Clock className="w-3 h-3 inline mr-1" />
+                              {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)}
+                            </div>
+                          ))}
+                      </div>
+                    )}
 
                     {dayBookings.length > 0 ? (
                       <div className="space-y-1.5 mt-2">
@@ -284,24 +368,101 @@ export default function FarrierSchedule() {
                 {fullProfile.schedules
                   .sort((a, b) => a.day_of_week - b.day_of_week)
                   .map((schedule) => (
-                    <div
-                      key={schedule.id}
-                      className="flex items-center justify-between p-4 bg-earth-50 rounded-xl"
-                    >
-                      <div>
-                        <span className="font-medium text-earth-900">
-                          {DAYS[schedule.day_of_week]}
-                        </span>
-                        <span className="text-earth-600 ml-4">
-                          {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => deleteScheduleMutation.mutate(schedule.id)}
-                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                    <div key={schedule.id}>
+                      {editingSchedule?.id === schedule.id ? (
+                        // Edit mode
+                        <div className="p-4 bg-brand-50 border-2 border-brand-200 rounded-xl">
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="font-medium text-earth-900">
+                              {DAYS[schedule.day_of_week]}
+                            </span>
+                            <button
+                              onClick={() => setEditingSchedule(null)}
+                              className="p-1 text-earth-500 hover:bg-white rounded"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                          <div className="flex gap-3 items-end">
+                            <div>
+                              <label className="label text-xs">Starttid</label>
+                              <select
+                                className="input text-sm"
+                                value={editingSchedule.start_time}
+                                onChange={(e) => setEditingSchedule({ ...editingSchedule, start_time: e.target.value })}
+                              >
+                                {TIME_OPTIONS.map((time) => (
+                                  <option key={time} value={time}>{time}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="label text-xs">Sluttid</label>
+                              <select
+                                className="input text-sm"
+                                value={editingSchedule.end_time}
+                                onChange={(e) => setEditingSchedule({ ...editingSchedule, end_time: e.target.value })}
+                              >
+                                {TIME_OPTIONS.map((time) => (
+                                  <option key={time} value={time}>{time}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <button
+                              onClick={() => {
+                                updateScheduleMutation.mutate({
+                                  id: schedule.id,
+                                  data: {
+                                    start_time: editingSchedule.start_time,
+                                    end_time: editingSchedule.end_time,
+                                  },
+                                });
+                              }}
+                              disabled={updateScheduleMutation.isPending}
+                              className="btn-primary text-sm"
+                            >
+                              {updateScheduleMutation.isPending ? (
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                'Spara'
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        // View mode
+                        <div className="flex items-center justify-between p-4 bg-earth-50 rounded-xl">
+                          <div>
+                            <span className="font-medium text-earth-900">
+                              {DAYS[schedule.day_of_week]}
+                            </span>
+                            <span className="text-earth-600 ml-4">
+                              {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)}
+                            </span>
+                          </div>
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => setEditingSchedule({
+                                id: schedule.id,
+                                day_of_week: schedule.day_of_week,
+                                start_time: schedule.start_time,
+                                end_time: schedule.end_time,
+                              })}
+                              className="p-2 text-brand-600 hover:bg-brand-50 rounded-lg"
+                              title="Redigera"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => deleteScheduleMutation.mutate(schedule.id)}
+                              className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                              title="Ta bort"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
               </div>
@@ -312,51 +473,66 @@ export default function FarrierSchedule() {
             )}
 
             {/* Add New Schedule */}
-            <div className="flex flex-wrap gap-3 items-end">
+            <div className="space-y-4">
               <div>
-                <label className="label">Dag</label>
-                <select
-                  className="input"
-                  value={newSchedule.day_of_week}
-                  onChange={(e) => setNewSchedule(s => ({ ...s, day_of_week: Number(e.target.value) }))}
-                >
+                <label className="label mb-2">Välj dagar *</label>
+                <div className="flex flex-wrap gap-2">
                   {DAYS.map((day, index) => (
-                    <option key={index} value={index}>{day}</option>
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => toggleDay(index)}
+                      className={`px-4 py-2 rounded-lg border-2 transition-all ${
+                        newSchedule.selectedDays.includes(index)
+                          ? 'border-brand-500 bg-brand-50 text-brand-700 font-medium'
+                          : 'border-earth-200 bg-white text-earth-700 hover:border-earth-300'
+                      }`}
+                    >
+                      {day}
+                    </button>
                   ))}
-                </select>
+                </div>
+                {newSchedule.selectedDays.length > 0 && (
+                  <p className="text-sm text-earth-500 mt-2">
+                    {newSchedule.selectedDays.length} dag{newSchedule.selectedDays.length !== 1 ? 'ar' : ''} vald{newSchedule.selectedDays.length !== 1 ? 'a' : ''}
+                  </p>
+                )}
               </div>
-              <div>
-                <label className="label">Starttid</label>
-                <select
-                  className="input"
-                  value={newSchedule.start_time}
-                  onChange={(e) => setNewSchedule(s => ({ ...s, start_time: e.target.value }))}
+
+              <div className="flex flex-wrap gap-3 items-end">
+                <div>
+                  <label className="label">Starttid</label>
+                  <select
+                    className="input"
+                    value={newSchedule.start_time}
+                    onChange={(e) => setNewSchedule(s => ({ ...s, start_time: e.target.value }))}
+                  >
+                    {TIME_OPTIONS.map((time) => (
+                      <option key={time} value={time}>{time}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Sluttid</label>
+                  <select
+                    className="input"
+                    value={newSchedule.end_time}
+                    onChange={(e) => setNewSchedule(s => ({ ...s, end_time: e.target.value }))}
+                  >
+                    {TIME_OPTIONS.map((time) => (
+                      <option key={time} value={time}>{time}</option>
+                    ))}
+                  </select>
+                </div>
+                <button
+                  onClick={handleAddSchedule}
+                  disabled={newSchedule.selectedDays.length === 0 || addScheduleMutation.isPending}
+                  className="btn-primary"
                 >
-                  {TIME_OPTIONS.map((time) => (
-                    <option key={time} value={time}>{time}</option>
-                  ))}
-                </select>
+                  <Plus className="w-5 h-5" />
+                  Lägg till
+                </button>
               </div>
-              <div>
-                <label className="label">Sluttid</label>
-                <select
-                  className="input"
-                  value={newSchedule.end_time}
-                  onChange={(e) => setNewSchedule(s => ({ ...s, end_time: e.target.value }))}
-                >
-                  {TIME_OPTIONS.map((time) => (
-                    <option key={time} value={time}>{time}</option>
-                  ))}
-                </select>
-              </div>
-              <button
-                onClick={handleAddSchedule}
-                disabled={addScheduleMutation.isPending}
-                className="btn-primary"
-              >
-                <Plus className="w-5 h-5" />
-                Lägg till
-              </button>
             </div>
           </div>
         </div>

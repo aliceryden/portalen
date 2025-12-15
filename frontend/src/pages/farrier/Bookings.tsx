@@ -265,8 +265,19 @@ export default function FarrierBookings() {
 
       {/* View Booking Details Modal */}
       {viewBooking && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-slide-up">
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={(e) => {
+            // Close modal when clicking outside (on the backdrop)
+            if (e.target === e.currentTarget) {
+              setViewBooking(null);
+            }
+          }}
+        >
+          <div 
+            className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-slide-up"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="p-6 border-b border-earth-100 flex items-center justify-between">
               <h2 className="font-display text-xl font-semibold text-earth-900">
                 Bokningsdetaljer

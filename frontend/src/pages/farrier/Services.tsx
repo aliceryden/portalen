@@ -265,12 +265,19 @@ export default function FarrierServices() {
                 <div>
                   <label className="label">Pris (kr) *</label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     className={`input ${errors.price ? 'input-error' : ''}`}
                     placeholder="500"
                     {...register('price', {
                       required: 'Pris krävs',
-                      min: { value: 0, message: 'Pris måste vara positivt' },
+                      valueAsNumber: true,
+                      validate: (value) => {
+                        const num = Number(value);
+                        if (isNaN(num)) return 'Måste vara ett nummer';
+                        if (num < 0) return 'Pris måste vara positivt';
+                        return true;
+                      },
                     })}
                   />
                   {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price.message}</p>}
@@ -279,12 +286,19 @@ export default function FarrierServices() {
                 <div>
                   <label className="label">Tid (minuter) *</label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     className={`input ${errors.duration_minutes ? 'input-error' : ''}`}
                     placeholder="60"
                     {...register('duration_minutes', {
                       required: 'Tid krävs',
-                      min: { value: 15, message: 'Minst 15 minuter' },
+                      valueAsNumber: true,
+                      validate: (value) => {
+                        const num = Number(value);
+                        if (isNaN(num)) return 'Måste vara ett nummer';
+                        if (num < 15) return 'Minst 15 minuter';
+                        return true;
+                      },
                     })}
                   />
                   {errors.duration_minutes && (

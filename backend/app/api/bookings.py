@@ -16,13 +16,23 @@ router = APIRouter()
 
 def booking_to_response(booking: Booking) -> dict:
     """Konvertera booking till response med extra info"""
+    # Ensure scheduled_date is timezone-aware (UTC) for proper frontend handling
+    scheduled_date = booking.scheduled_date
+    if scheduled_date and scheduled_date.tzinfo is None:
+        # If naive datetime, assume it's UTC
+        from datetime import timezone
+        scheduled_date = scheduled_date.replace(tzinfo=timezone.utc)
+    elif scheduled_date:
+        # Convert to UTC if timezone-aware
+        scheduled_date = scheduled_date.astimezone(timezone.utc)
+    
     return {
         "id": booking.id,
         "horse_owner_id": booking.horse_owner_id,
         "farrier_id": booking.farrier_id,
         "horse_id": booking.horse_id,
         "service_type": booking.service_type,
-        "scheduled_date": booking.scheduled_date,
+        "scheduled_date": scheduled_date,
         "duration_minutes": booking.duration_minutes,
         "location_address": booking.location_address,
         "location_city": booking.location_city,
@@ -109,11 +119,25 @@ async def create_booking(
     # Beräkna totalpris
     total_price = booking_data.service_price + booking_data.travel_fee
     
+    # Ensure scheduled_date is timezone-aware and convert to UTC for storage
+    scheduled_date = booking_data.scheduled_date
+    if scheduled_date.tzinfo is None:
+        # If naive, assume it's already UTC
+        from datetime import timezone
+        scheduled_date = scheduled_date.replace(tzinfo=timezone.utc)
+    else:
+        # Convert to UTC if timezone-aware
+        scheduled_date = scheduled_date.astimezone(timezone.utc)
+    
+    # Create booking data with UTC datetime
+    booking_dict = booking_data.model_dump()
+    booking_dict['scheduled_date'] = scheduled_date
+    
     # Skapa bokning
     booking = Booking(
         horse_owner_id=current_user.id,
         total_price=total_price,
-        **booking_data.model_dump()
+        **booking_dict
     )
     
     db.add(booking)

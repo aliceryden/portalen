@@ -84,7 +84,7 @@ export default function FarrierProfilePage() {
                   className="w-32 h-32 rounded-2xl object-cover"
                 />
               ) : (
-                <span className="text-5xl font-display font-bold text-brand-600">
+                <span className="text-5xl font-sans font-bold text-brand-600">
                   {farrier.user_first_name?.[0]}{farrier.user_last_name?.[0]}
                 </span>
               )}
