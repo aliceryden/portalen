@@ -1,0 +1,454 @@
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Plus, Trash2, Clock, MapPin, Calendar as CalendarIcon } from 'lucide-react';
+import BackButton from '../../components/BackButton';
+import toast from 'react-hot-toast';
+import { farriersApi, bookingsApi } from '../../services/api';
+import { useAuthStore } from '../../store/authStore';
+import { format, startOfWeek, addDays, isToday, parseISO } from 'date-fns';
+import { sv } from 'date-fns/locale';
+import { Link } from 'react-router-dom';
+
+const DAYS = ['Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag', 'Söndag'];
+const TIME_OPTIONS = Array.from({ length: 24 }, (_, i) => 
+  `${String(i).padStart(2, '0')}:00`
+);
+
+export default function FarrierSchedule() {
+  const { user } = useAuthStore();
+  const queryClient = useQueryClient();
+  
+  const [newSchedule, setNewSchedule] = useState({
+    day_of_week: 0,
+    start_time: '08:00',
+    end_time: '17:00',
+  });
+  
+  const [newArea, setNewArea] = useState({
+    city: '',
+    postal_code_prefix: '',
+    travel_fee: 0,
+  });
+
+  // Get farrier profile
+  const { data: farriers } = useQuery({
+    queryKey: ['farriers'],
+    queryFn: () => farriersApi.list(),
+  });
+
+  const myProfile = farriers?.find(f => f.user_id === user?.id);
+
+  const { data: fullProfile, isLoading } = useQuery({
+    queryKey: ['farrier-profile', myProfile?.id],
+    queryFn: () => farriersApi.get(myProfile!.id),
+    enabled: !!myProfile?.id,
+  });
+
+  // Get bookings for calendar
+  const { data: bookings } = useQuery({
+    queryKey: ['farrier-bookings'],
+    queryFn: () => bookingsApi.list(),
+  });
+
+  // Mutations
+  const addScheduleMutation = useMutation({
+    mutationFn: farriersApi.addSchedule,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['farrier-profile'] });
+      toast.success('Schema tillagt');
+    },
+    onError: () => toast.error('Kunde inte lägga till schema'),
+  });
+
+  const deleteScheduleMutation = useMutation({
+    mutationFn: farriersApi.deleteSchedule,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['farrier-profile'] });
+      toast.success('Schema borttaget');
+    },
+  });
+
+  const addAreaMutation = useMutation({
+    mutationFn: farriersApi.addArea,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['farrier-profile'] });
+      toast.success('Område tillagt');
+      setNewArea({ city: '', postal_code_prefix: '', travel_fee: 0 });
+    },
+    onError: () => toast.error('Kunde inte lägga till område'),
+  });
+
+  const deleteAreaMutation = useMutation({
+    mutationFn: farriersApi.deleteArea,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['farrier-profile'] });
+      toast.success('Område borttaget');
+    },
+  });
+
+  const handleAddSchedule = () => {
+    addScheduleMutation.mutate({
+      day_of_week: newSchedule.day_of_week,
+      start_time: newSchedule.start_time,
+      end_time: newSchedule.end_time,
+    });
+  };
+
+  const handleAddArea = () => {
+    if (!newArea.city.trim()) return;
+    addAreaMutation.mutate(newArea);
+  };
+
+  // Get current week dates
+  const today = new Date();
+  const weekStart = startOfWeek(today, { weekStartsOn: 1 }); // Start on Monday
+  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+
+  // Group bookings by date
+  const bookingsByDate = (bookings || []).reduce((acc, booking) => {
+    if (booking.scheduled_date) {
+      const dateKey = format(parseISO(booking.scheduled_date), 'yyyy-MM-dd');
+      if (!acc[dateKey]) {
+        acc[dateKey] = [];
+      }
+      acc[dateKey].push(booking);
+    }
+    return acc;
+  }, {} as Record<string, NonNullable<typeof bookings>>);
+
+  // Get status color
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'bg-amber-100 text-amber-700 border-amber-200';
+      case 'confirmed':
+        return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'in_progress':
+        return 'bg-purple-100 text-purple-700 border-purple-200';
+      case 'completed':
+        return 'bg-forest-100 text-forest-700 border-forest-200';
+      case 'cancelled':
+        return 'bg-red-100 text-red-700 border-red-200';
+      default:
+        return 'bg-earth-100 text-earth-700 border-earth-200';
+    }
+  };
+
+  // Get status label
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'Väntande';
+      case 'confirmed':
+        return 'Bekräftad';
+      case 'in_progress':
+        return 'Pågående';
+      case 'completed':
+        return 'Slutförd';
+      case 'cancelled':
+        return 'Avbokad';
+      default:
+        return status;
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-20">
+        <div className="w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Back Button */}
+      <div className="mb-4">
+        <BackButton to="/farrier" label="Tillbaka till dashboard" />
+      </div>
+
+      <h1 className="font-display text-3xl font-bold text-earth-900 mb-2">
+        Schema & Arbetsområden
+      </h1>
+      <p className="text-earth-600 mb-8">
+        Hantera din tillgänglighet och vilka områden du arbetar i
+      </p>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left side - Weekly Calendar */}
+        <div className="lg:col-span-1">
+          <div className="card sticky top-24">
+            <div className="p-6 border-b border-earth-100">
+              <h2 className="font-display text-xl font-semibold text-earth-900 flex items-center gap-2">
+                <CalendarIcon className="w-5 h-5 text-brand-500" />
+                Veckoplanering
+              </h2>
+              <p className="text-earth-500 text-sm mt-1">
+                {format(weekStart, 'd MMM', { locale: sv })} - {format(addDays(weekStart, 6), 'd MMM yyyy', { locale: sv })}
+              </p>
+            </div>
+
+            <div className="p-4 space-y-2">
+              {weekDays.map((day, index) => {
+                const dateKey = format(day, 'yyyy-MM-dd');
+                const dayBookings = bookingsByDate[dateKey] || [];
+                const isCurrentDay = isToday(day);
+
+                return (
+                  <div
+                    key={index}
+                    className={`border rounded-lg p-3 ${
+                      isCurrentDay ? 'border-brand-500 bg-brand-50' : 'border-earth-200'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <div className={`font-semibold ${isCurrentDay ? 'text-brand-700' : 'text-earth-900'}`}>
+                          {DAYS[index]}
+                        </div>
+                        <div className={`text-sm ${isCurrentDay ? 'text-brand-600' : 'text-earth-500'}`}>
+                          {format(day, 'd MMM', { locale: sv })}
+                        </div>
+                      </div>
+                      {dayBookings.length > 0 && (
+                        <span className="text-xs font-medium bg-brand-500 text-white px-2 py-1 rounded-full">
+                          {dayBookings.length}
+                        </span>
+                      )}
+                    </div>
+
+                    {dayBookings.length > 0 ? (
+                      <div className="space-y-1.5 mt-2">
+                        {dayBookings.slice(0, 3).map((booking) => (
+                          <Link
+                            key={booking.id}
+                            to="/farrier/bookings"
+                            className="block p-2 rounded border text-xs hover:shadow-sm transition-shadow"
+                          >
+                            <div className="font-medium text-earth-900 truncate">
+                              {format(parseISO(booking.scheduled_date), 'HH:mm')} - {booking.horse_name || 'Häst'}
+                            </div>
+                            <div className="text-earth-600 truncate text-xs mt-0.5">
+                              {booking.service_type}
+                            </div>
+                            <div className={`inline-block mt-1 px-1.5 py-0.5 rounded text-xs border ${getStatusColor(booking.status)}`}>
+                              {getStatusLabel(booking.status)}
+                            </div>
+                          </Link>
+                        ))}
+                        {dayBookings.length > 3 && (
+                          <div className="text-xs text-earth-500 text-center pt-1">
+                            +{dayBookings.length - 3} fler
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-xs text-earth-400 text-center py-2">
+                        Inga bokningar
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="p-4 border-t border-earth-100">
+              <Link
+                to="/farrier/bookings"
+                className="text-sm text-brand-600 hover:text-brand-700 font-medium flex items-center justify-center gap-1"
+              >
+                Se alla bokningar →
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Right side - Schedule and Areas */}
+        <div className="lg:col-span-2 space-y-8">
+        {/* Working Hours */}
+        <div className="card">
+          <div className="p-6 border-b border-earth-100">
+            <h2 className="font-display text-xl font-semibold text-earth-900 flex items-center gap-2">
+              <Clock className="w-5 h-5 text-brand-500" />
+              Arbetstider
+            </h2>
+            <p className="text-earth-500 text-sm mt-1">
+              Ange vilka dagar och tider du är tillgänglig för bokningar
+            </p>
+          </div>
+
+          <div className="p-6">
+            {/* Current Schedule */}
+            {fullProfile?.schedules?.length ? (
+              <div className="space-y-3 mb-6">
+                {fullProfile.schedules
+                  .sort((a, b) => a.day_of_week - b.day_of_week)
+                  .map((schedule) => (
+                    <div
+                      key={schedule.id}
+                      className="flex items-center justify-between p-4 bg-earth-50 rounded-xl"
+                    >
+                      <div>
+                        <span className="font-medium text-earth-900">
+                          {DAYS[schedule.day_of_week]}
+                        </span>
+                        <span className="text-earth-600 ml-4">
+                          {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => deleteScheduleMutation.mutate(schedule.id)}
+                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+              </div>
+            ) : (
+              <p className="text-earth-500 text-center py-4 mb-6">
+                Inga arbetstider angivna ännu
+              </p>
+            )}
+
+            {/* Add New Schedule */}
+            <div className="flex flex-wrap gap-3 items-end">
+              <div>
+                <label className="label">Dag</label>
+                <select
+                  className="input"
+                  value={newSchedule.day_of_week}
+                  onChange={(e) => setNewSchedule(s => ({ ...s, day_of_week: Number(e.target.value) }))}
+                >
+                  {DAYS.map((day, index) => (
+                    <option key={index} value={index}>{day}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="label">Starttid</label>
+                <select
+                  className="input"
+                  value={newSchedule.start_time}
+                  onChange={(e) => setNewSchedule(s => ({ ...s, start_time: e.target.value }))}
+                >
+                  {TIME_OPTIONS.map((time) => (
+                    <option key={time} value={time}>{time}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="label">Sluttid</label>
+                <select
+                  className="input"
+                  value={newSchedule.end_time}
+                  onChange={(e) => setNewSchedule(s => ({ ...s, end_time: e.target.value }))}
+                >
+                  {TIME_OPTIONS.map((time) => (
+                    <option key={time} value={time}>{time}</option>
+                  ))}
+                </select>
+              </div>
+              <button
+                onClick={handleAddSchedule}
+                disabled={addScheduleMutation.isPending}
+                className="btn-primary"
+              >
+                <Plus className="w-5 h-5" />
+                Lägg till
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Work Areas */}
+        <div className="card">
+          <div className="p-6 border-b border-earth-100">
+            <h2 className="font-display text-xl font-semibold text-earth-900 flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-brand-500" />
+              Arbetsområden
+            </h2>
+            <p className="text-earth-500 text-sm mt-1">
+              Ange vilka städer/kommuner du arbetar i och eventuell reseersättning
+            </p>
+          </div>
+
+          <div className="p-6">
+            {/* Current Areas */}
+            {fullProfile?.areas?.length ? (
+              <div className="flex flex-wrap gap-3 mb-6">
+                {fullProfile.areas.map((area) => (
+                  <div
+                    key={area.id}
+                    className="flex items-center gap-2 px-4 py-2 bg-earth-100 rounded-full"
+                  >
+                    <span className="font-medium text-earth-900">{area.city}</span>
+                    {area.travel_fee > 0 && (
+                      <span className="text-sm text-earth-500">+{area.travel_fee} kr</span>
+                    )}
+                    <button
+                      onClick={() => deleteAreaMutation.mutate(area.id)}
+                      className="p-1 text-red-500 hover:bg-red-100 rounded-full"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-earth-500 text-center py-4 mb-6">
+                Inga arbetsområden angivna ännu
+              </p>
+            )}
+
+            {/* Add New Area */}
+            <div className="flex flex-wrap gap-3 items-end">
+              <div className="flex-1 min-w-[200px]">
+                <label className="label">Stad/Kommun</label>
+                <input
+                  type="text"
+                  className="input"
+                  placeholder="T.ex. Stockholm"
+                  value={newArea.city}
+                  onChange={(e) => setNewArea(a => ({ ...a, city: e.target.value }))}
+                />
+              </div>
+              <div className="w-32">
+                <label className="label">Postnr prefix</label>
+                <input
+                  type="text"
+                  className="input"
+                  placeholder="123"
+                  maxLength={3}
+                  value={newArea.postal_code_prefix}
+                  onChange={(e) => setNewArea(a => ({ ...a, postal_code_prefix: e.target.value }))}
+                />
+              </div>
+              <div className="w-32">
+                <label className="label">Reseavgift</label>
+                <input
+                  type="number"
+                  className="input"
+                  placeholder="0"
+                  min={0}
+                  value={newArea.travel_fee}
+                  onChange={(e) => setNewArea(a => ({ ...a, travel_fee: Number(e.target.value) }))}
+                />
+              </div>
+              <button
+                onClick={handleAddArea}
+                disabled={!newArea.city.trim() || addAreaMutation.isPending}
+                className="btn-primary"
+              >
+                <Plus className="w-5 h-5" />
+                Lägg till
+              </button>
+            </div>
+          </div>
+        </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
