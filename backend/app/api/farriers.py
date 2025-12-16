@@ -270,6 +270,20 @@ async def add_schedule(
         raise HTTPException(status_code=403, detail="Endast hovslagare")
     
     farrier = db.query(Farrier).filter(Farrier.user_id == current_user.id).first()
+    
+    # Kontrollera om det redan finns ett schema för samma dag
+    existing_schedule = db.query(FarrierSchedule).filter(
+        FarrierSchedule.farrier_id == farrier.id,
+        FarrierSchedule.day_of_week == schedule_data.day_of_week,
+        FarrierSchedule.is_available == True
+    ).first()
+    
+    if existing_schedule:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Det finns redan ett schema för {['Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag', 'Söndag'][schedule_data.day_of_week]}. Uppdatera det befintliga schemat istället."
+        )
+    
     schedule = FarrierSchedule(farrier_id=farrier.id, **schedule_data.model_dump())
     db.add(schedule)
     db.commit()
@@ -295,7 +309,26 @@ async def update_schedule(
     ).first()
     
     if not schedule:
-        raise HTTPException(status_code=404, detail="Schema hittades inte")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Schema hittades inte"
+        )
+    
+    # Om day_of_week uppdateras, kontrollera om det redan finns ett schema för den dagen
+    day_to_check = schedule_data.day_of_week if schedule_data.day_of_week is not None else schedule.day_of_week
+    if day_to_check != schedule.day_of_week:
+        existing_schedule = db.query(FarrierSchedule).filter(
+            FarrierSchedule.farrier_id == farrier.id,
+            FarrierSchedule.day_of_week == day_to_check,
+            FarrierSchedule.id != schedule_id,
+            FarrierSchedule.is_available == True
+        ).first()
+        
+        if existing_schedule:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Det finns redan ett schema för {['Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag', 'Söndag'][day_to_check]}."
+            )(status_code=404, detail="Schema hittades inte")
     
     # Uppdatera endast de fält som skickats med
     update_data = schedule_data.model_dump(exclude_unset=True)

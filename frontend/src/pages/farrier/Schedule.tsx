@@ -161,6 +161,17 @@ export default function FarrierSchedule() {
     return acc;
   }, {} as Record<string, NonNullable<typeof bookings>>);
 
+  // Get unique areas for each day
+  const getDayAreas = (dayBookings: NonNullable<typeof bookings>) => {
+    const areas = new Set<string>();
+    dayBookings.forEach(booking => {
+      if (booking.location_city) {
+        areas.add(booking.location_city);
+      }
+    });
+    return Array.from(areas);
+  };
+
   // Get status color
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -290,16 +301,46 @@ export default function FarrierSchedule() {
                     {/* Show working hours for this day */}
                     {fullProfile?.schedules?.some(s => s.day_of_week === index && s.is_available) && (
                       <div className="mb-2 pb-2 border-b border-earth-200">
-                        {fullProfile.schedules
-                          .filter(s => s.day_of_week === index && s.is_available)
-                          .map((schedule) => (
+                        {(() => {
+                          // Filtrera och gruppera scheman för att visa endast unika tidsintervall
+                          const daySchedules = fullProfile.schedules
+                            .filter(s => s.day_of_week === index && s.is_available);
+                          
+                          // Skapa en map för att hålla unika tidsintervall
+                          const uniqueTimeSlots = new Map<string, typeof daySchedules[0]>();
+                          
+                          daySchedules.forEach(schedule => {
+                            const timeKey = `${schedule.start_time.slice(0, 5)}-${schedule.end_time.slice(0, 5)}`;
+                            if (!uniqueTimeSlots.has(timeKey)) {
+                              uniqueTimeSlots.set(timeKey, schedule);
+                            }
+                          });
+                          
+                          return Array.from(uniqueTimeSlots.values()).map((schedule) => (
                             <div key={schedule.id} className="text-xs text-brand-600 font-medium">
                               <Clock className="w-3 h-3 inline mr-1" />
                               {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)}
                             </div>
-                          ))}
+                          ));
+                        })()}
                       </div>
                     )}
+
+                    {/* Show areas for this day */}
+                    {dayBookings.length > 0 && (() => {
+                      const dayAreas = getDayAreas(dayBookings);
+                      if (dayAreas.length > 0) {
+                        return (
+                          <div className="mb-2 pb-2 border-b border-earth-200">
+                            <div className="text-xs text-earth-600 font-medium flex items-center gap-1">
+                              <MapPin className="w-3 h-3" />
+                              {dayAreas.join(', ')}
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
 
                     {dayBookings.length > 0 ? (
                       <div className="space-y-1.5 mt-2">
@@ -309,14 +350,24 @@ export default function FarrierSchedule() {
                             to="/farrier/bookings"
                             className="block p-2 rounded border text-xs hover:shadow-sm transition-shadow"
                           >
-                            <div className="font-medium text-earth-900 truncate">
-                              {format(parseISO(booking.scheduled_date), 'HH:mm')} - {booking.horse_name || 'Häst'}
-                            </div>
-                            <div className="text-earth-600 truncate text-xs mt-0.5">
-                              {booking.service_type}
-                            </div>
-                            <div className={`inline-block mt-1 px-1.5 py-0.5 rounded text-xs border ${getStatusColor(booking.status)}`}>
-                              {getStatusLabel(booking.status)}
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium text-earth-900 truncate">
+                                  {format(parseISO(booking.scheduled_date), 'HH:mm')} - {booking.horse_name || 'Häst'}
+                                </div>
+                                <div className="text-earth-600 truncate text-xs mt-0.5">
+                                  {booking.service_type}
+                                </div>
+                                {booking.location_city && (
+                                  <div className="text-earth-500 truncate text-xs mt-0.5 flex items-center gap-1">
+                                    <MapPin className="w-3 h-3 flex-shrink-0" />
+                                    {booking.location_city}
+                                  </div>
+                                )}
+                              </div>
+                              <div className={`flex-shrink-0 px-1.5 py-0.5 rounded text-xs border ${getStatusColor(booking.status)}`}>
+                                {getStatusLabel(booking.status)}
+                              </div>
                             </div>
                           </Link>
                         ))}
@@ -600,15 +651,25 @@ export default function FarrierSchedule() {
                   onChange={(e) => setNewArea(a => ({ ...a, postal_code_prefix: e.target.value }))}
                 />
               </div>
-              <div className="w-32">
-                <label className="label">Reseavgift</label>
+              <div className="w-40">
+                <label className="label">Reseavgift (kr/mil)</label>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   className="input"
                   placeholder="0"
-                  min={0}
-                  value={newArea.travel_fee}
-                  onChange={(e) => setNewArea(a => ({ ...a, travel_fee: Number(e.target.value) }))}
+                  value={newArea.travel_fee === 0 ? '' : newArea.travel_fee}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === '') {
+                      setNewArea(a => ({ ...a, travel_fee: 0 }));
+                    } else {
+                      const num = Number(value);
+                      if (!isNaN(num) && num >= 0) {
+                        setNewArea(a => ({ ...a, travel_fee: num }));
+                      }
+                    }
+                  }}
                 />
               </div>
               <button
