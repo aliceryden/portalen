@@ -130,3 +130,4 @@ def create_10_bookings_tomorrow():
 
 if __name__ == "__main__":
     create_10_bookings_tomorrow()
+

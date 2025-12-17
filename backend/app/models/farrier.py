@@ -88,7 +88,7 @@ class FarrierArea(Base):
     
     # Kommun/Stad
     city = Column(String(100), nullable=False)
-    postal_code_prefix = Column(String(5))  # T.ex. "123" för alla 123XX
+    postal_code_prefix = Column(String(10))  # T.ex. "184 32" för postnummer
     
     # Extra kostnad för resor till detta område
     travel_fee = Column(Float, default=0.0)

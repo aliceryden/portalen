@@ -250,561 +250,6 @@ export default function FarrierSchedule() {
     );
   }
 
-  // Calendar Section Component
-  const CalendarSection = () => (
-    <div className="card">
-      <div className="p-4 sm:p-6 border-b border-earth-100">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="font-display text-lg sm:text-xl font-semibold text-earth-900 flex items-center gap-2">
-            <CalendarIcon className="w-5 h-5 text-brand-500" />
-            Veckoplanering
-          </h2>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={goToPreviousWeek}
-              className="p-1.5 hover:bg-earth-100 rounded-lg transition-colors"
-              title="Föregående vecka"
-            >
-              <ChevronLeft className="w-4 h-4 text-earth-600" />
-            </button>
-            <button
-              onClick={goToCurrentWeek}
-              className="px-2 py-1 text-xs text-earth-600 hover:bg-earth-100 rounded-lg transition-colors"
-              title="Gå till denna vecka"
-            >
-              Idag
-            </button>
-            <button
-              onClick={goToNextWeek}
-              className="p-1.5 hover:bg-earth-100 rounded-lg transition-colors"
-              title="Nästa vecka"
-            >
-              <ChevronRight className="w-4 h-4 text-earth-600" />
-            </button>
-          </div>
-        </div>
-        <p className="text-earth-500 text-sm">
-          {format(weekStart, 'd MMM', { locale: sv })} - {format(addDays(weekStart, 6), 'd MMM yyyy', { locale: sv })}
-        </p>
-      </div>
-
-      <div className="p-3 sm:p-4 space-y-2">
-        {weekDays.map((day, index) => {
-          const dateKey = format(day, 'yyyy-MM-dd');
-          const dayBookings = bookingsByDate[dateKey] || [];
-          const isCurrentDay = isToday(day);
-
-          return (
-            <div
-              key={index}
-              className={`border rounded-lg p-3 ${
-                isCurrentDay ? 'border-brand-500 bg-brand-50' : 'border-earth-200'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <div className={`font-semibold ${isCurrentDay ? 'text-brand-700' : 'text-earth-900'}`}>
-                    <span className="hidden sm:inline">{DAYS[index]}</span>
-                    <span className="sm:hidden">{DAYS_SHORT[index]}</span>
-                  </div>
-                  <div className={`text-sm ${isCurrentDay ? 'text-brand-600' : 'text-earth-500'}`}>
-                    {format(day, 'd MMM', { locale: sv })}
-                  </div>
-                </div>
-                {dayBookings.length > 0 && (
-                  <span className="text-xs font-medium bg-brand-500 text-white px-2 py-1 rounded-full">
-                    {dayBookings.length}
-                  </span>
-                )}
-              </div>
-
-              {/* Show working hours for this day */}
-              {fullProfile?.schedules?.some(s => s.day_of_week === index && s.is_available) && (
-                <div className="mb-2 pb-2 border-b border-earth-200">
-                  {(() => {
-                    const daySchedules = fullProfile.schedules
-                      .filter(s => s.day_of_week === index && s.is_available);
-                    
-                    const uniqueTimeSlots = new Map<string, typeof daySchedules[0]>();
-                    
-                    daySchedules.forEach(schedule => {
-                      const timeKey = `${schedule.start_time.slice(0, 5)}-${schedule.end_time.slice(0, 5)}`;
-                      if (!uniqueTimeSlots.has(timeKey)) {
-                        uniqueTimeSlots.set(timeKey, schedule);
-                      }
-                    });
-                    
-                    return Array.from(uniqueTimeSlots.values()).map((schedule) => (
-                      <div key={schedule.id} className="text-xs text-brand-600 font-medium">
-                        <Clock className="w-3 h-3 inline mr-1" />
-                        {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)}
-                      </div>
-                    ));
-                  })()}
-                </div>
-              )}
-
-              {/* Show areas for this day */}
-              {dayBookings.length > 0 && (() => {
-                const dayAreas = getDayAreas(dayBookings);
-                if (dayAreas.length > 0) {
-                  return (
-                    <div className="mb-2 pb-2 border-b border-earth-200">
-                      <div className="text-xs text-earth-600 font-medium flex items-center gap-1">
-                        <MapPin className="w-3 h-3" />
-                        {dayAreas.join(', ')}
-                      </div>
-                    </div>
-                  );
-                }
-                return null;
-              })()}
-
-              {dayBookings.length > 0 ? (
-                <div className="space-y-1.5 mt-2">
-                  {dayBookings.slice(0, 3).map((booking) => (
-                    <Link
-                      key={booking.id}
-                      to="/farrier/bookings"
-                      className="block p-2 rounded border text-xs hover:shadow-sm transition-shadow bg-white"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-earth-900 truncate">
-                            {format(parseISO(booking.scheduled_date), 'HH:mm')} - {booking.horse_name || 'Häst'}
-                          </div>
-                          <div className="text-earth-600 truncate text-xs mt-0.5">
-                            {booking.service_type}
-                          </div>
-                          {booking.location_city && (
-                            <div className="text-earth-500 truncate text-xs mt-0.5 flex items-center gap-1">
-                              <MapPin className="w-3 h-3 flex-shrink-0" />
-                              {booking.location_city}
-                            </div>
-                          )}
-                        </div>
-                        <div className={`flex-shrink-0 px-1.5 py-0.5 rounded text-xs border ${getStatusColor(booking.status)}`}>
-                          {getStatusLabel(booking.status)}
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                  {dayBookings.length > 3 && (
-                    <div className="text-xs text-earth-500 text-center pt-1">
-                      +{dayBookings.length - 3} fler
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-xs text-earth-400 text-center py-2">
-                  Inga bokningar
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="p-4 border-t border-earth-100">
-        <Link
-          to="/farrier/bookings"
-          className="text-sm text-brand-600 hover:text-brand-700 font-medium flex items-center justify-center gap-1"
-        >
-          Se alla bokningar →
-        </Link>
-      </div>
-    </div>
-  );
-
-  // Working Hours Section Component
-  const WorkingHoursSection = () => (
-    <div className="card">
-      <div className="p-4 sm:p-6 border-b border-earth-100">
-        <h2 className="font-display text-lg sm:text-xl font-semibold text-earth-900 flex items-center gap-2">
-          <Clock className="w-5 h-5 text-brand-500" />
-          Arbetstider
-        </h2>
-        <p className="text-earth-500 text-sm mt-1">
-          Ange vilka dagar och tider du är tillgänglig för bokningar
-        </p>
-      </div>
-
-      <div className="p-4 sm:p-6">
-        {/* Current Schedule */}
-        {fullProfile?.schedules?.length ? (
-          <div className="space-y-3 mb-6">
-            {fullProfile.schedules
-              .sort((a, b) => a.day_of_week - b.day_of_week)
-              .map((schedule) => (
-                <div key={schedule.id}>
-                  {editingSchedule?.id === schedule.id ? (
-                    <div className="p-4 bg-brand-50 border-2 border-brand-200 rounded-xl">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="font-medium text-earth-900">
-                          {DAYS[schedule.day_of_week]}
-                        </span>
-                        <button
-                          onClick={() => setEditingSchedule(null)}
-                          className="p-1 text-earth-500 hover:bg-white rounded"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                      <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
-                        <div className="flex gap-3 flex-1">
-                          <div className="flex-1">
-                            <label className="label text-xs">Starttid</label>
-                            <select
-                              className="input text-sm"
-                              value={editingSchedule.start_time}
-                              onChange={(e) => setEditingSchedule({ ...editingSchedule, start_time: e.target.value })}
-                            >
-                              {TIME_OPTIONS.map((time) => (
-                                <option key={time} value={time}>{time}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <div className="flex-1">
-                            <label className="label text-xs">Sluttid</label>
-                            <select
-                              className="input text-sm"
-                              value={editingSchedule.end_time}
-                              onChange={(e) => setEditingSchedule({ ...editingSchedule, end_time: e.target.value })}
-                            >
-                              {TIME_OPTIONS.map((time) => (
-                                <option key={time} value={time}>{time}</option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => {
-                            updateScheduleMutation.mutate({
-                              id: schedule.id,
-                              data: {
-                                start_time: editingSchedule.start_time,
-                                end_time: editingSchedule.end_time,
-                              },
-                            });
-                          }}
-                          disabled={updateScheduleMutation.isPending}
-                          className="btn-primary text-sm w-full sm:w-auto"
-                        >
-                          {updateScheduleMutation.isPending ? (
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          ) : (
-                            'Spara'
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-between p-4 bg-earth-50 rounded-xl">
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
-                        <span className="font-medium text-earth-900">
-                          {DAYS[schedule.day_of_week]}
-                        </span>
-                        <span className="text-earth-600 text-sm sm:text-base">
-                          {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)}
-                        </span>
-                      </div>
-                      <div className="flex gap-1">
-                        <button
-                          onClick={() => setEditingSchedule({
-                            id: schedule.id,
-                            day_of_week: schedule.day_of_week,
-                            start_time: schedule.start_time,
-                            end_time: schedule.end_time,
-                          })}
-                          className="p-2 text-brand-600 hover:bg-brand-50 rounded-lg"
-                          title="Redigera"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => deleteScheduleMutation.mutate(schedule.id)}
-                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
-                          title="Ta bort"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-          </div>
-        ) : (
-          <p className="text-earth-500 text-center py-4 mb-6">
-            Inga arbetstider angivna ännu
-          </p>
-        )}
-
-        {/* Add New Schedule */}
-        <div className="space-y-4">
-          <div>
-            <label className="label mb-2">Välj dagar *</label>
-            <div className="grid grid-cols-4 sm:flex sm:flex-wrap gap-2">
-              {DAYS.map((day, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => toggleDay(index)}
-                  className={`px-2 sm:px-4 py-2 rounded-lg border-2 transition-all text-sm sm:text-base ${
-                    newSchedule.selectedDays.includes(index)
-                      ? 'border-brand-500 bg-brand-50 text-brand-700 font-medium'
-                      : 'border-earth-200 bg-white text-earth-700 hover:border-earth-300'
-                  }`}
-                >
-                  <span className="hidden sm:inline">{day}</span>
-                  <span className="sm:hidden">{DAYS_SHORT[index]}</span>
-                </button>
-              ))}
-            </div>
-            {newSchedule.selectedDays.length > 0 && (
-              <p className="text-sm text-earth-500 mt-2">
-                {newSchedule.selectedDays.length} dag{newSchedule.selectedDays.length !== 1 ? 'ar' : ''} vald{newSchedule.selectedDays.length !== 1 ? 'a' : ''}
-              </p>
-            )}
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
-            <div className="flex gap-3 flex-1">
-              <div className="flex-1">
-                <label className="label">Starttid</label>
-                <select
-                  className="input"
-                  value={newSchedule.start_time}
-                  onChange={(e) => setNewSchedule(s => ({ ...s, start_time: e.target.value }))}
-                >
-                  {TIME_OPTIONS.map((time) => (
-                    <option key={time} value={time}>{time}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex-1">
-                <label className="label">Sluttid</label>
-                <select
-                  className="input"
-                  value={newSchedule.end_time}
-                  onChange={(e) => setNewSchedule(s => ({ ...s, end_time: e.target.value }))}
-                >
-                  {TIME_OPTIONS.map((time) => (
-                    <option key={time} value={time}>{time}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <button
-              onClick={handleAddSchedule}
-              disabled={newSchedule.selectedDays.length === 0 || addScheduleMutation.isPending}
-              className="btn-primary w-full sm:w-auto"
-            >
-              <Plus className="w-5 h-5" />
-              Lägg till
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  // Travel Radius Section Component
-  const TravelRadiusSection = () => (
-    <div className="card">
-      <div className="p-4 sm:p-6 border-b border-earth-100">
-        <h2 className="font-display text-lg sm:text-xl font-semibold text-earth-900 flex items-center gap-2">
-          <Navigation className="w-5 h-5 text-brand-500" />
-          Resradie
-        </h2>
-        <p className="text-earth-500 text-sm mt-1">
-          Ange hur långt du är villig att resa för uppdrag
-        </p>
-      </div>
-
-      <div className="p-4 sm:p-6">
-        <div className="w-full">
-          <label className="label mb-2">Max resavstånd (km)</label>
-          {isEditingRadius ? (
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-                <input
-                  type="range"
-                  min="10"
-                  max="200"
-                  step="5"
-                  value={travelRadius}
-                  onChange={(e) => setTravelRadius(Number(e.target.value))}
-                  className="flex-1 h-2 bg-earth-200 rounded-lg appearance-none cursor-pointer accent-brand-500"
-                />
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    min="10"
-                    max="500"
-                    value={travelRadius}
-                    onChange={(e) => setTravelRadius(Number(e.target.value))}
-                    className="input text-center w-24"
-                  />
-                  <span className="text-earth-600 font-medium">km</span>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={handleSaveTravelRadius}
-                  disabled={updateProfileMutation.isPending}
-                  className="btn-primary flex-1 sm:flex-none"
-                >
-                  {updateProfileMutation.isPending ? (
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4" />
-                      Spara
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={() => {
-                    setTravelRadius(fullProfile?.travel_radius_km || 50);
-                    setIsEditingRadius(false);
-                  }}
-                  className="btn-secondary flex-1 sm:flex-none"
-                >
-                  Avbryt
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-              <div className="flex items-center gap-2 px-4 py-3 bg-earth-50 rounded-xl flex-1 justify-center sm:justify-start">
-                <Navigation className="w-5 h-5 text-brand-500" />
-                <span className="text-2xl font-bold text-earth-900">{fullProfile?.travel_radius_km || 50}</span>
-                <span className="text-earth-600">km</span>
-              </div>
-              <button
-                onClick={() => setIsEditingRadius(true)}
-                className="btn-secondary w-full sm:w-auto"
-              >
-                <Edit2 className="w-4 h-4" />
-                Ändra
-              </button>
-            </div>
-          )}
-        </div>
-        
-        <div className="mt-4 p-4 bg-brand-50 rounded-xl">
-          <p className="text-sm text-brand-700">
-            <strong>Tips:</strong> Hästägare kan söka efter hovslagare baserat på avstånd. 
-            En större radie gör dig synlig för fler potentiella kunder, men tänk på restiden.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-
-  // Work Areas Section Component
-  const WorkAreasSection = () => (
-    <div className="card">
-      <div className="p-4 sm:p-6 border-b border-earth-100">
-        <h2 className="font-display text-lg sm:text-xl font-semibold text-earth-900 flex items-center gap-2">
-          <MapPin className="w-5 h-5 text-brand-500" />
-          Arbetsområden
-        </h2>
-        <p className="text-earth-500 text-sm mt-1">
-          Ange vilka städer/kommuner du arbetar i och eventuell reseersättning
-        </p>
-      </div>
-
-      <div className="p-4 sm:p-6">
-        {/* Current Areas */}
-        {fullProfile?.areas?.length ? (
-          <div className="flex flex-wrap gap-2 sm:gap-3 mb-6">
-            {fullProfile.areas.map((area) => (
-              <div
-                key={area.id}
-                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-earth-100 rounded-full text-sm"
-              >
-                <span className="font-medium text-earth-900">{area.city}</span>
-                {area.travel_fee > 0 && (
-                  <span className="text-xs sm:text-sm text-earth-500">+{area.travel_fee} kr</span>
-                )}
-                <button
-                  onClick={() => deleteAreaMutation.mutate(area.id)}
-                  className="p-1 text-red-500 hover:bg-red-100 rounded-full"
-                >
-                  <Trash2 className="w-3 h-3" />
-                </button>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-earth-500 text-center py-4 mb-6">
-            Inga arbetsområden angivna ännu
-          </p>
-        )}
-
-        {/* Add New Area */}
-        <div className="space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="label">Stad/Kommun</label>
-              <input
-                type="text"
-                className="input"
-                placeholder="T.ex. Stockholm"
-                value={newArea.city}
-                onChange={(e) => setNewArea(a => ({ ...a, city: e.target.value }))}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="label">Postnr prefix</label>
-                <input
-                  type="text"
-                  className="input"
-                  placeholder="123"
-                  maxLength={3}
-                  value={newArea.postal_code_prefix}
-                  onChange={(e) => setNewArea(a => ({ ...a, postal_code_prefix: e.target.value }))}
-                />
-              </div>
-              <div>
-                <label className="label">Reseavgift (kr)</label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  className="input"
-                  placeholder="0"
-                  value={newArea.travel_fee === 0 ? '' : newArea.travel_fee}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (value === '') {
-                      setNewArea(a => ({ ...a, travel_fee: 0 }));
-                    } else {
-                      const num = Number(value);
-                      if (!isNaN(num) && num >= 0) {
-                        setNewArea(a => ({ ...a, travel_fee: num }));
-                      }
-                    }
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-          <button
-            onClick={handleAddArea}
-            disabled={!newArea.city.trim() || addAreaMutation.isPending}
-            className="btn-primary w-full sm:w-auto"
-          >
-            <Plus className="w-5 h-5" />
-            Lägg till område
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
       {/* Back Button */}
@@ -870,10 +315,544 @@ export default function FarrierSchedule() {
 
         {/* Main Content */}
         <div className="flex-1 min-w-0">
-          {activeSection === 'calendar' && <CalendarSection />}
-          {activeSection === 'hours' && <WorkingHoursSection />}
-          {activeSection === 'radius' && <TravelRadiusSection />}
-          {activeSection === 'areas' && <WorkAreasSection />}
+          {/* Calendar Section */}
+          {activeSection === 'calendar' && (
+            <div className="card">
+              <div className="p-4 sm:p-6 border-b border-earth-100">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="font-display text-lg sm:text-xl font-semibold text-earth-900 flex items-center gap-2">
+                    <CalendarIcon className="w-5 h-5 text-brand-500" />
+                    Veckoplanering
+                  </h2>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={goToPreviousWeek}
+                      className="p-1.5 hover:bg-earth-100 rounded-lg transition-colors"
+                      title="Föregående vecka"
+                    >
+                      <ChevronLeft className="w-4 h-4 text-earth-600" />
+                    </button>
+                    <button
+                      onClick={goToCurrentWeek}
+                      className="px-2 py-1 text-xs text-earth-600 hover:bg-earth-100 rounded-lg transition-colors"
+                      title="Gå till denna vecka"
+                    >
+                      Idag
+                    </button>
+                    <button
+                      onClick={goToNextWeek}
+                      className="p-1.5 hover:bg-earth-100 rounded-lg transition-colors"
+                      title="Nästa vecka"
+                    >
+                      <ChevronRight className="w-4 h-4 text-earth-600" />
+                    </button>
+                  </div>
+                </div>
+                <p className="text-earth-500 text-sm">
+                  {format(weekStart, 'd MMM', { locale: sv })} - {format(addDays(weekStart, 6), 'd MMM yyyy', { locale: sv })}
+                </p>
+              </div>
+
+              <div className="p-3 sm:p-4 space-y-2">
+                {weekDays.map((day, index) => {
+                  const dateKey = format(day, 'yyyy-MM-dd');
+                  const dayBookings = bookingsByDate[dateKey] || [];
+                  const isCurrentDay = isToday(day);
+
+                  return (
+                    <div
+                      key={index}
+                      className={`border rounded-lg p-3 ${
+                        isCurrentDay ? 'border-brand-500 bg-brand-50' : 'border-earth-200'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <div className={`font-semibold ${isCurrentDay ? 'text-brand-700' : 'text-earth-900'}`}>
+                            <span className="hidden sm:inline">{DAYS[index]}</span>
+                            <span className="sm:hidden">{DAYS_SHORT[index]}</span>
+                          </div>
+                          <div className={`text-sm ${isCurrentDay ? 'text-brand-600' : 'text-earth-500'}`}>
+                            {format(day, 'd MMM', { locale: sv })}
+                          </div>
+                        </div>
+                        {dayBookings.length > 0 && (
+                          <span className="text-xs font-medium bg-brand-500 text-white px-2 py-1 rounded-full">
+                            {dayBookings.length}
+                          </span>
+                        )}
+                      </div>
+
+                      {fullProfile?.schedules?.some(s => s.day_of_week === index && s.is_available) && (
+                        <div className="mb-2 pb-2 border-b border-earth-200">
+                          {(() => {
+                            const daySchedules = fullProfile.schedules
+                              .filter(s => s.day_of_week === index && s.is_available);
+                            
+                            const uniqueTimeSlots = new Map<string, typeof daySchedules[0]>();
+                            
+                            daySchedules.forEach(schedule => {
+                              const timeKey = `${schedule.start_time.slice(0, 5)}-${schedule.end_time.slice(0, 5)}`;
+                              if (!uniqueTimeSlots.has(timeKey)) {
+                                uniqueTimeSlots.set(timeKey, schedule);
+                              }
+                            });
+                            
+                            return Array.from(uniqueTimeSlots.values()).map((schedule) => (
+                              <div key={schedule.id} className="text-xs text-brand-600 font-medium">
+                                <Clock className="w-3 h-3 inline mr-1" />
+                                {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)}
+                              </div>
+                            ));
+                          })()}
+                        </div>
+                      )}
+
+                      {dayBookings.length > 0 && (() => {
+                        const dayAreas = getDayAreas(dayBookings);
+                        if (dayAreas.length > 0) {
+                          return (
+                            <div className="mb-2 pb-2 border-b border-earth-200">
+                              <div className="text-xs text-earth-600 font-medium flex items-center gap-1">
+                                <MapPin className="w-3 h-3" />
+                                {dayAreas.join(', ')}
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
+
+                      {dayBookings.length > 0 ? (
+                        <div className="space-y-1.5 mt-2">
+                          {dayBookings.slice(0, 3).map((booking) => (
+                            <Link
+                              key={booking.id}
+                              to="/farrier/bookings"
+                              className="block p-2 rounded border text-xs hover:shadow-sm transition-shadow bg-white"
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-medium text-earth-900 truncate">
+                                    {format(parseISO(booking.scheduled_date), 'HH:mm')} - {booking.horse_name || 'Häst'}
+                                  </div>
+                                  <div className="text-earth-600 truncate text-xs mt-0.5">
+                                    {booking.service_type}
+                                  </div>
+                                  {booking.location_city && (
+                                    <div className="text-earth-500 truncate text-xs mt-0.5 flex items-center gap-1">
+                                      <MapPin className="w-3 h-3 flex-shrink-0" />
+                                      {booking.location_city}
+                                    </div>
+                                  )}
+                                </div>
+                                <div className={`flex-shrink-0 px-1.5 py-0.5 rounded text-xs border ${getStatusColor(booking.status)}`}>
+                                  {getStatusLabel(booking.status)}
+                                </div>
+                              </div>
+                            </Link>
+                          ))}
+                          {dayBookings.length > 3 && (
+                            <div className="text-xs text-earth-500 text-center pt-1">
+                              +{dayBookings.length - 3} fler
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-xs text-earth-400 text-center py-2">
+                          Inga bokningar
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="p-4 border-t border-earth-100">
+                <Link
+                  to="/farrier/bookings"
+                  className="text-sm text-brand-600 hover:text-brand-700 font-medium flex items-center justify-center gap-1"
+                >
+                  Se alla bokningar →
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* Working Hours Section */}
+          {activeSection === 'hours' && (
+            <div className="card">
+              <div className="p-4 sm:p-6 border-b border-earth-100">
+                <h2 className="font-display text-lg sm:text-xl font-semibold text-earth-900 flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-brand-500" />
+                  Arbetstider
+                </h2>
+                <p className="text-earth-500 text-sm mt-1">
+                  Ange vilka dagar och tider du är tillgänglig för bokningar
+                </p>
+              </div>
+
+              <div className="p-4 sm:p-6">
+                {fullProfile?.schedules?.length ? (
+                  <div className="space-y-3 mb-6">
+                    {fullProfile.schedules
+                      .sort((a, b) => a.day_of_week - b.day_of_week)
+                      .map((schedule) => (
+                        <div key={schedule.id}>
+                          {editingSchedule?.id === schedule.id ? (
+                            <div className="p-4 bg-brand-50 border-2 border-brand-200 rounded-xl">
+                              <div className="flex items-center justify-between mb-3">
+                                <span className="font-medium text-earth-900">
+                                  {DAYS[schedule.day_of_week]}
+                                </span>
+                                <button
+                                  onClick={() => setEditingSchedule(null)}
+                                  className="p-1 text-earth-500 hover:bg-white rounded"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </div>
+                              <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
+                                <div className="flex gap-3 flex-1">
+                                  <div className="flex-1">
+                                    <label className="label text-xs">Starttid</label>
+                                    <select
+                                      className="input text-sm"
+                                      value={editingSchedule.start_time}
+                                      onChange={(e) => setEditingSchedule({ ...editingSchedule, start_time: e.target.value })}
+                                    >
+                                      {TIME_OPTIONS.map((time) => (
+                                        <option key={time} value={time}>{time}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                  <div className="flex-1">
+                                    <label className="label text-xs">Sluttid</label>
+                                    <select
+                                      className="input text-sm"
+                                      value={editingSchedule.end_time}
+                                      onChange={(e) => setEditingSchedule({ ...editingSchedule, end_time: e.target.value })}
+                                    >
+                                      {TIME_OPTIONS.map((time) => (
+                                        <option key={time} value={time}>{time}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    updateScheduleMutation.mutate({
+                                      id: schedule.id,
+                                      data: {
+                                        start_time: editingSchedule.start_time,
+                                        end_time: editingSchedule.end_time,
+                                      },
+                                    });
+                                  }}
+                                  disabled={updateScheduleMutation.isPending}
+                                  className="btn-primary text-sm w-full sm:w-auto"
+                                >
+                                  {updateScheduleMutation.isPending ? (
+                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                  ) : (
+                                    'Spara'
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-between p-4 bg-earth-50 rounded-xl">
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                                <span className="font-medium text-earth-900">
+                                  {DAYS[schedule.day_of_week]}
+                                </span>
+                                <span className="text-earth-600 text-sm sm:text-base">
+                                  {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)}
+                                </span>
+                              </div>
+                              <div className="flex gap-1">
+                                <button
+                                  onClick={() => setEditingSchedule({
+                                    id: schedule.id,
+                                    day_of_week: schedule.day_of_week,
+                                    start_time: schedule.start_time,
+                                    end_time: schedule.end_time,
+                                  })}
+                                  className="p-2 text-brand-600 hover:bg-brand-50 rounded-lg"
+                                  title="Redigera"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => deleteScheduleMutation.mutate(schedule.id)}
+                                  className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                                  title="Ta bort"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                  </div>
+                ) : (
+                  <p className="text-earth-500 text-center py-4 mb-6">
+                    Inga arbetstider angivna ännu
+                  </p>
+                )}
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="label mb-2">Välj dagar *</label>
+                    <div className="grid grid-cols-4 sm:flex sm:flex-wrap gap-2">
+                      {DAYS.map((day, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => toggleDay(index)}
+                          className={`px-2 sm:px-4 py-2 rounded-lg border-2 transition-all text-sm sm:text-base ${
+                            newSchedule.selectedDays.includes(index)
+                              ? 'border-brand-500 bg-brand-50 text-brand-700 font-medium'
+                              : 'border-earth-200 bg-white text-earth-700 hover:border-earth-300'
+                          }`}
+                        >
+                          <span className="hidden sm:inline">{day}</span>
+                          <span className="sm:hidden">{DAYS_SHORT[index]}</span>
+                        </button>
+                      ))}
+                    </div>
+                    {newSchedule.selectedDays.length > 0 && (
+                      <p className="text-sm text-earth-500 mt-2">
+                        {newSchedule.selectedDays.length} dag{newSchedule.selectedDays.length !== 1 ? 'ar' : ''} vald{newSchedule.selectedDays.length !== 1 ? 'a' : ''}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
+                    <div className="flex gap-3 flex-1">
+                      <div className="flex-1">
+                        <label className="label">Starttid</label>
+                        <select
+                          className="input"
+                          value={newSchedule.start_time}
+                          onChange={(e) => setNewSchedule(s => ({ ...s, start_time: e.target.value }))}
+                        >
+                          {TIME_OPTIONS.map((time) => (
+                            <option key={time} value={time}>{time}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex-1">
+                        <label className="label">Sluttid</label>
+                        <select
+                          className="input"
+                          value={newSchedule.end_time}
+                          onChange={(e) => setNewSchedule(s => ({ ...s, end_time: e.target.value }))}
+                        >
+                          {TIME_OPTIONS.map((time) => (
+                            <option key={time} value={time}>{time}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleAddSchedule}
+                      disabled={newSchedule.selectedDays.length === 0 || addScheduleMutation.isPending}
+                      className="btn-primary w-full sm:w-auto"
+                    >
+                      <Plus className="w-5 h-5" />
+                      Lägg till
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Travel Radius Section */}
+          {activeSection === 'radius' && (
+            <div className="card">
+              <div className="p-4 sm:p-6 border-b border-earth-100">
+                <h2 className="font-display text-lg sm:text-xl font-semibold text-earth-900 flex items-center gap-2">
+                  <Navigation className="w-5 h-5 text-brand-500" />
+                  Resradie
+                </h2>
+                <p className="text-earth-500 text-sm mt-1">
+                  Ange hur långt du är villig att resa för uppdrag
+                </p>
+              </div>
+
+              <div className="p-4 sm:p-6">
+                <div className="w-full">
+                  <label className="label mb-2">Max resavstånd (km)</label>
+                  {isEditingRadius ? (
+                    <div className="flex flex-col gap-4">
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+                        <input
+                          type="range"
+                          min="10"
+                          max="200"
+                          step="5"
+                          value={travelRadius}
+                          onChange={(e) => setTravelRadius(Number(e.target.value))}
+                          className="flex-1 h-2 bg-earth-200 rounded-lg appearance-none cursor-pointer accent-brand-500"
+                        />
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            min="10"
+                            max="500"
+                            value={travelRadius}
+                            onChange={(e) => setTravelRadius(Number(e.target.value))}
+                            className="input text-center w-24"
+                          />
+                          <span className="text-earth-600 font-medium">km</span>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleSaveTravelRadius}
+                          disabled={updateProfileMutation.isPending}
+                          className="btn-primary flex-1 sm:flex-none"
+                        >
+                          {updateProfileMutation.isPending ? (
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <>
+                              <Save className="w-4 h-4" />
+                              Spara
+                            </>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setTravelRadius(fullProfile?.travel_radius_km || 50);
+                            setIsEditingRadius(false);
+                          }}
+                          className="btn-secondary flex-1 sm:flex-none"
+                        >
+                          Avbryt
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+                      <div className="flex items-center gap-2 px-4 py-3 bg-earth-50 rounded-xl flex-1 justify-center sm:justify-start">
+                        <Navigation className="w-5 h-5 text-brand-500" />
+                        <span className="text-2xl font-bold text-earth-900">{fullProfile?.travel_radius_km || 50}</span>
+                        <span className="text-earth-600">km</span>
+                      </div>
+                      <button
+                        onClick={() => setIsEditingRadius(true)}
+                        className="btn-secondary w-full sm:w-auto"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                        Ändra
+                      </button>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="mt-4 p-4 bg-brand-50 rounded-xl">
+                  <p className="text-sm text-brand-700">
+                    <strong>Tips:</strong> Hästägare kan söka efter hovslagare baserat på avstånd. 
+                    En större radie gör dig synlig för fler potentiella kunder, men tänk på restiden.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Work Areas Section */}
+          {activeSection === 'areas' && (
+            <div className="card">
+              <div className="p-4 sm:p-6 border-b border-earth-100">
+                <h2 className="font-display text-lg sm:text-xl font-semibold text-earth-900 flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-brand-500" />
+                  Arbetsområden
+                </h2>
+                <p className="text-earth-500 text-sm mt-1">
+                  Ange vilka städer/kommuner du arbetar i och eventuell reseersättning
+                </p>
+              </div>
+
+              <div className="p-4 sm:p-6">
+                {fullProfile?.areas?.length ? (
+                  <div className="flex flex-wrap gap-2 sm:gap-3 mb-6">
+                    {fullProfile.areas.map((area) => (
+                      <div
+                        key={area.id}
+                        className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-earth-100 rounded-full text-sm"
+                      >
+                        <span className="font-medium text-earth-900">{area.city}</span>
+                        {area.travel_fee > 0 && (
+                          <span className="text-xs sm:text-sm text-earth-500">+{area.travel_fee} kr</span>
+                        )}
+                        <button
+                          onClick={() => deleteAreaMutation.mutate(area.id)}
+                          className="p-1 text-red-500 hover:bg-red-100 rounded-full"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-earth-500 text-center py-4 mb-6">
+                    Inga arbetsområden angivna ännu
+                  </p>
+                )}
+
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="label">Stad/Kommun</label>
+                      <input
+                        type="text"
+                        className="input"
+                        placeholder="T.ex. Stockholm"
+                        value={newArea.city}
+                        onChange={(e) => setNewArea({ ...newArea, city: e.target.value })}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="label">Postnummer</label>
+                        <input
+                          type="text"
+                          className="input"
+                          placeholder="184 32"
+                          maxLength={6}
+                          value={newArea.postal_code_prefix}
+                          onChange={(e) => setNewArea({ ...newArea, postal_code_prefix: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label className="label">Reseavgift (kr/mil)</label>
+                        <input
+                          type="number"
+                          inputMode="numeric"
+                          className="input"
+                          placeholder="0"
+                          value={newArea.travel_fee || ''}
+                          onChange={(e) => setNewArea({ ...newArea, travel_fee: Number(e.target.value) || 0 })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleAddArea}
+                    disabled={!newArea.city.trim() || addAreaMutation.isPending}
+                    className="btn-primary w-full sm:w-auto"
+                  >
+                    <Plus className="w-5 h-5" />
+                    Lägg till område
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
