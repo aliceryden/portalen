@@ -88,6 +88,20 @@
   @apply rounded-xl shadow-lg;
 }
 
+.leaflet-tooltip {
+  @apply rounded-lg shadow-lg border-0 px-0 py-0;
+  background: white;
+}
+
+.leaflet-tooltip::before {
+  border-top-color: white;
+}
+
+.farrier-tooltip {
+  min-width: 150px;
+  max-width: 220px;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

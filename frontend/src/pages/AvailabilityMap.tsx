@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Circle, Tooltip } from 'react-leaflet';
 import { Icon, DivIcon } from 'leaflet';
 import { Calendar, Clock, MapPin, Phone, Star, ChevronLeft, ChevronRight, Users } from 'lucide-react';
 import { format, addDays } from 'date-fns';
@@ -18,6 +18,7 @@ interface FarrierLocation {
   available_areas: string[];
   primary_location?: string;
   primary_coordinates?: { lat: number; lng: number };
+  available_times: string[];
   bookings: Array<{
     id: number;
     time: string;
@@ -159,12 +160,63 @@ export default function AvailabilityMap() {
                           position={[farrier.primary_coordinates.lat, farrier.primary_coordinates.lng]}
                           icon={createFarrierIcon(farrier.farrier_name, color)}
                         >
+                          {/* Tooltip som visas vid hovring */}
+                          <Tooltip 
+                            direction="top" 
+                            offset={[0, -20]} 
+                            opacity={1}
+                            className="farrier-tooltip"
+                          >
+                            <div className="p-1">
+                              <p className="font-bold text-sm mb-1">
+                                {farrier.business_name || farrier.farrier_name}
+                              </p>
+                              {farrier.available_times.length > 0 ? (
+                                <div>
+                                  <p className="text-xs text-gray-600 mb-1">Lediga tider:</p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {farrier.available_times.slice(0, 6).map(time => (
+                                      <span 
+                                        key={time} 
+                                        className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium"
+                                      >
+                                        {time}
+                                      </span>
+                                    ))}
+                                    {farrier.available_times.length > 6 && (
+                                      <span className="text-xs text-gray-500">
+                                        +{farrier.available_times.length - 6}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              ) : (
+                                <p className="text-xs text-red-600">Fullbokad idag</p>
+                              )}
+                            </div>
+                          </Tooltip>
+                          
+                          {/* Popup som visas vid klick */}
                           <Popup>
                             <div className="p-2 min-w-[200px]">
                               <h3 className="font-bold text-lg">
                                 {farrier.business_name || farrier.farrier_name}
                               </h3>
                               <p className="text-gray-600 text-sm mb-2">{farrier.farrier_name}</p>
+                              
+                              {/* Lediga tider */}
+                              {farrier.available_times.length > 0 && (
+                                <div className="border-t pt-2 mt-2">
+                                  <p className="font-medium text-sm mb-1 text-green-700">✓ Lediga tider:</p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {farrier.available_times.map(time => (
+                                      <span key={time} className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium">
+                                        {time}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                               
                               <div className="border-t pt-2 mt-2">
                                 <p className="font-medium text-sm mb-1">Områden idag:</p>
@@ -293,7 +345,29 @@ export default function AvailabilityMap() {
                               </div>
                             </div>
                             
-                            {/* Bookings */}
+                            {/* Lediga tider */}
+                            {farrier.available_times.length > 0 && (
+                              <div className="mt-2">
+                                <p className="text-xs text-green-600 font-medium mb-1">Lediga tider:</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {farrier.available_times.slice(0, 4).map(time => (
+                                    <span 
+                                      key={time} 
+                                      className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-xs"
+                                    >
+                                      {time}
+                                    </span>
+                                  ))}
+                                  {farrier.available_times.length > 4 && (
+                                    <span className="text-xs text-earth-500">
+                                      +{farrier.available_times.length - 4}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Bokade tider */}
                             <div className="mt-2 text-xs text-earth-500">
                               <Clock className="w-3 h-3 inline mr-1" />
                               {farrier.bookings.length} bokningar: {' '}
