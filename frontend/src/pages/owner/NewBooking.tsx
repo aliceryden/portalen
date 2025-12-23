@@ -38,7 +38,10 @@ export default function NewBooking() {
       toast.success('Bokning skickad! Du får besked när hovslagaren bekräftar.');
       navigate('/owner/bookings');
     },
-    onError: () => toast.error('Kunde inte skapa bokning'),
+    onError: (error: any) => {
+      const message = error?.response?.data?.detail || 'Kunde inte skapa bokning';
+      toast.error(message, { duration: 5000 });
+    },
   });
 
   // Generate available dates (next 30 days, weekdays based on farrier schedule)

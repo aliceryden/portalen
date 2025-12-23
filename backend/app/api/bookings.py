@@ -77,6 +77,12 @@ async def list_bookings(
         farrier = db.query(Farrier).filter(Farrier.user_id == current_user.id).first()
         if farrier:
             query = query.filter(Booking.farrier_id == farrier.id)
+        else:
+            # Om hovslagarprofil saknas, returnera inga bokningar
+            query = query.filter(Booking.id == -1)
+    elif current_user.role == "admin":
+        # Admins kan se alla bokningar
+        pass
     else:
         query = query.filter(Booking.horse_owner_id == current_user.id)
     

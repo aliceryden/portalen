@@ -56,10 +56,22 @@ export default function MyHorses() {
   const openModal = (horse?: Horse) => {
     if (horse) {
       setEditingHorse(horse);
+      // Parse birth_date into year/month/day
+      let birthYear = '', birthMonth = '', birthDay = '';
+      if (horse.birth_date) {
+        const parts = horse.birth_date.split('-');
+        if (parts.length === 3) {
+          birthYear = parts[0];
+          birthMonth = parts[1];
+          birthDay = parts[2];
+        }
+      }
       reset({
         name: horse.name,
-        breed: horse.breed || '',
         birth_date: horse.birth_date || '',
+        birth_year: birthYear,
+        birth_month: birthMonth,
+        birth_day: birthDay,
         gender: horse.gender || '',
         height_cm: horse.height_cm || undefined,
         passport_number: horse.passport_number || '',
@@ -87,7 +99,9 @@ export default function MyHorses() {
   };
 
   const onSubmit = (data: HorseFormData) => {
-    const submitData = { ...data, image_url: horseImage };
+    // Remove temporary date fields before sending to backend
+    const { birth_year, birth_month, birth_day, ...cleanData } = data;
+    const submitData = { ...cleanData, image_url: horseImage };
     if (editingHorse) {
       updateMutation.mutate({ id: editingHorse.id, data: submitData });
     } else {
@@ -162,7 +176,7 @@ export default function MyHorses() {
                     <h3 className="font-display text-xl font-semibold text-earth-900">
                       {horse.name}
                     </h3>
-                    <p className="text-earth-500">{horse.breed || 'Ras ej angiven'}</p>
+                    {horse.gender && <p className="text-earth-500">{horse.gender}</p>}
                   </div>
                   <div className="flex gap-1">
                     <button
@@ -184,11 +198,6 @@ export default function MyHorses() {
                   {calculateAge(horse.birth_date) && (
                     <p className="text-earth-600">
                       <span className="text-earth-400">Ålder:</span> {calculateAge(horse.birth_date)}
-                    </p>
-                  )}
-                  {horse.gender && (
-                    <p className="text-earth-600">
-                      <span className="text-earth-400">Kön:</span> {horse.gender}
                     </p>
                   )}
                   {horse.height_cm && (
@@ -266,14 +275,6 @@ export default function MyHorses() {
                     {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
                   </div>
                   <div>
-                    <label className="label">Ras</label>
-                    <input className="input" placeholder="T.ex. Svenskt varmblod" {...register('breed')} />
-                  </div>
-                  <div>
-                    <label className="label">Födelsedatum</label>
-                    <input type="date" className="input" {...register('birth_date')} />
-                  </div>
-                  <div>
                     <label className="label">Kön</label>
                     <select className="input" {...register('gender')}>
                       <option value="">Välj kön</option>
@@ -282,9 +283,80 @@ export default function MyHorses() {
                       <option value="Valack">Valack</option>
                     </select>
                   </div>
+                  <div className="md:col-span-2">
+                    <label className="label">Födelsedatum</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <select 
+                        className="input h-12" 
+                        {...register('birth_year')}
+                        onChange={(e) => {
+                          const year = e.target.value;
+                          const month = (document.querySelector('[name="birth_month"]') as HTMLSelectElement)?.value || '01';
+                          const day = (document.querySelector('[name="birth_day"]') as HTMLSelectElement)?.value || '01';
+                          if (year) {
+                            setValue('birth_date', `${year}-${month}-${day}`);
+                          }
+                        }}
+                      >
+                        <option value="">År</option>
+                        {Array.from({ length: 40 }, (_, i) => new Date().getFullYear() - i).map(year => (
+                          <option key={year} value={year}>{year}</option>
+                        ))}
+                      </select>
+                      <select 
+                        className="input h-12" 
+                        {...register('birth_month')}
+                        onChange={(e) => {
+                          const month = e.target.value;
+                          const year = (document.querySelector('[name="birth_year"]') as HTMLSelectElement)?.value;
+                          const day = (document.querySelector('[name="birth_day"]') as HTMLSelectElement)?.value || '01';
+                          if (year && month) {
+                            setValue('birth_date', `${year}-${month}-${day}`);
+                          }
+                        }}
+                      >
+                        <option value="">Månad</option>
+                        {Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0')).map(month => (
+                          <option key={month} value={month}>
+                            {new Date(2000, parseInt(month) - 1).toLocaleString('sv-SE', { month: 'long' })}
+                          </option>
+                        ))}
+                      </select>
+                      <select 
+                        className="input h-12" 
+                        {...register('birth_day')}
+                        onChange={(e) => {
+                          const day = e.target.value;
+                          const year = (document.querySelector('[name="birth_year"]') as HTMLSelectElement)?.value;
+                          const month = (document.querySelector('[name="birth_month"]') as HTMLSelectElement)?.value || '01';
+                          if (year && day) {
+                            setValue('birth_date', `${year}-${month}-${day}`);
+                          }
+                        }}
+                      >
+                        <option value="">Dag</option>
+                        {Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0')).map(day => (
+                          <option key={day} value={day}>{parseInt(day)}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <input type="hidden" {...register('birth_date')} />
+                  </div>
                   <div>
                     <label className="label">Mankhöjd (cm)</label>
-                    <input type="number" className="input" placeholder="T.ex. 165" {...register('height_cm', { valueAsNumber: true })} />
+                    <input 
+                      type="text" 
+                      inputMode="numeric"
+                      maxLength={3}
+                      className="input" 
+                      placeholder="T.ex. 165" 
+                      {...register('height_cm', { 
+                        setValueAs: (v) => v === '' ? undefined : parseInt(v, 10),
+                        onChange: (e) => {
+                          e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                        }
+                      })} 
+                    />
                   </div>
                   <div>
                     <label className="label">Skoningsstorlek</label>

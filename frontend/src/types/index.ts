@@ -195,8 +195,10 @@ export interface LoginFormData {
 
 export interface HorseFormData {
   name: string;
-  breed?: string;
   birth_date?: string;
+  birth_year?: string;
+  birth_month?: string;
+  birth_day?: string;
   gender?: string;
   height_cm?: number;
   passport_number?: string;
@@ -206,6 +208,7 @@ export interface HorseFormData {
   stable_name?: string;
   stable_address?: string;
   stable_city?: string;
+  image_url?: string;
 }
 
 export interface BookingFormData {
