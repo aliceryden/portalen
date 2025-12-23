@@ -152,11 +152,11 @@ export default function RegisterPage() {
                     type="text"
                     className={`input pl-12 ${errors.first_name ? 'input-error' : ''}`}
                     placeholder="Anna"
-                    {...register('first_name', { required: 'Förnamn krävs' })}
-                    onBlur={(e) => {
-                      const capitalized = capitalizeFirst(e.target.value);
-                      setValue('first_name', capitalized);
-                    }}
+                    style={{ textTransform: 'capitalize' }}
+                    {...register('first_name', { 
+                      required: 'Förnamn krävs',
+                      setValueAs: (v: string) => v ? v.charAt(0).toUpperCase() + v.slice(1) : v
+                    })}
                   />
                 </div>
                 {errors.first_name && (
@@ -170,11 +170,11 @@ export default function RegisterPage() {
                   type="text"
                   className={`input ${errors.last_name ? 'input-error' : ''}`}
                   placeholder="Andersson"
-                  {...register('last_name', { required: 'Efternamn krävs' })}
-                  onBlur={(e) => {
-                    const capitalized = capitalizeFirst(e.target.value);
-                    setValue('last_name', capitalized);
-                  }}
+                  style={{ textTransform: 'capitalize' }}
+                  {...register('last_name', { 
+                    required: 'Efternamn krävs',
+                    setValueAs: (v: string) => v ? v.charAt(0).toUpperCase() + v.slice(1) : v
+                  })}
                 />
                 {errors.last_name && (
                   <p className="mt-1 text-sm text-red-500">{errors.last_name.message}</p>

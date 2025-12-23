@@ -3,12 +3,20 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { Icon } from 'leaflet';
-import { Search, MapPin, Star, Filter, List, Map as MapIcon, SlidersHorizontal, X, CheckCircle } from 'lucide-react';
+import { Search, MapPin, Star, Filter, List, Map as MapIcon, SlidersHorizontal, X, CheckCircle, Clock, Calendar } from 'lucide-react';
 import { farriersApi, horsesApi } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import api from '../services/api';
 import type { FarrierListItem, FarrierSearchFilters, Horse as HorseType } from '../types';
+import { format, addDays } from 'date-fns';
+import { sv } from 'date-fns/locale';
 import 'leaflet/dist/leaflet.css';
+
+// Tillgängliga tider att filtrera på
+const TIME_SLOTS = [
+  '08:00', '09:00', '10:00', '11:00', '12:00', 
+  '13:00', '14:00', '15:00', '16:00', '17:00'
+];
 
 // Fix for default marker icon
 const markerIcon = new Icon({
@@ -20,7 +28,7 @@ const markerIcon = new Icon({
   popupAnchor: [1, -34],
 });
 
-type ExtendedFarrier = FarrierListItem & { available_in_area?: boolean; reason?: string };
+type ExtendedFarrier = FarrierListItem & { available_in_area?: boolean; reason?: string; available_times?: string[] };
 
 // Simple geocoding for common Swedish cities
 const cityCoordinates: Record<string, { lat: number; lng: number }> = {
@@ -59,6 +67,8 @@ export default function FarriersPage() {
   const [searchCity, setSearchCity] = useState('');
   const [selectedHorse, setSelectedHorse] = useState<HorseType | null>(null);
   const [searchMode, setSearchMode] = useState<'location' | 'horse'>('location');
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
 
   // Get user's horses if logged in
   const { data: horses } = useQuery({
@@ -76,6 +86,17 @@ export default function FarriersPage() {
       return response.data;
     },
     enabled: searchMode === 'horse' && !!selectedHorse?.stable_city,
+  });
+
+  // Get farrier availability for selected date
+  const dateStr = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : null;
+  const { data: availabilityData } = useQuery({
+    queryKey: ['farrier-availability', dateStr],
+    queryFn: async () => {
+      const response = await api.get(`/availability/farrier-locations?date_str=${dateStr}`);
+      return response.data;
+    },
+    enabled: !!selectedDate,
   });
 
   // Get user's location
@@ -139,8 +160,18 @@ export default function FarriersPage() {
     }));
   };
 
+  // Create a map of farrier availability from availability data
+  const farrierAvailabilityMap = new Map<number, string[]>();
+  if (availabilityData?.farriers) {
+    for (const f of availabilityData.farriers) {
+      farrierAvailabilityMap.set(f.farrier_id, f.available_times || []);
+    }
+  }
+
   // Combine regular farriers with available farriers
   const displayFarriers: ExtendedFarrier[] = (() => {
+    let result: ExtendedFarrier[] = [];
+    
     if (searchMode === 'horse') {
       // Start with all farriers in the area
       const allFarriers = (farriers || []) as ExtendedFarrier[];
@@ -153,19 +184,34 @@ export default function FarriersPage() {
           typeof af.reason === 'string' ? af.reason : undefined
         ]));
         
-        return allFarriers.map(farrier => {
+        result = allFarriers.map(farrier => {
           if (availableIds.has(farrier.id)) {
             const reason = reasonMap.get(farrier.id);
             return { ...farrier, available_in_area: true, reason } as ExtendedFarrier;
           }
           return farrier;
         });
+      } else {
+        result = allFarriers;
       }
-      
-      return allFarriers;
+    } else {
+      result = (farriers || []) as ExtendedFarrier[];
     }
     
-    return (farriers || []) as ExtendedFarrier[];
+    // Add availability info from availability data
+    result = result.map(farrier => ({
+      ...farrier,
+      available_times: farrierAvailabilityMap.get(farrier.id) || [],
+    }));
+    
+    // Filter by selected time if set
+    if (selectedTime && selectedDate) {
+      result = result.filter(farrier => 
+        (farrier as any).available_times?.includes(selectedTime)
+      );
+    }
+    
+    return result;
   })();
 
   // Get map center - prioritize selected horse, then filters, then first farrier with coords, then default
@@ -269,6 +315,35 @@ export default function FarriersPage() {
             </span>
           )}
         </div>
+
+        {/* Available times when date is selected */}
+        {selectedDate && farrier.available_times && farrier.available_times.length > 0 && (
+          <div className="mt-3 pt-3 border-t border-earth-100">
+            <p className="text-xs text-green-600 font-medium mb-1 flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              Lediga tider {format(selectedDate, 'd/M', { locale: sv })}:
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {farrier.available_times.slice(0, 6).map(time => (
+                <span 
+                  key={time} 
+                  className={`px-2 py-0.5 rounded text-xs ${
+                    time === selectedTime 
+                      ? 'bg-green-500 text-white font-medium' 
+                      : 'bg-green-100 text-green-700'
+                  }`}
+                >
+                  {time}
+                </span>
+              ))}
+              {farrier.available_times.length > 6 && (
+                <span className="text-xs text-earth-500">
+                  +{farrier.available_times.length - 6} fler
+                </span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </Link>
   );
@@ -398,6 +473,91 @@ export default function FarriersPage() {
             </div>
           </div>
 
+          {/* Date & Time Filter */}
+          <div className="mt-4 p-4 bg-earth-50 rounded-xl">
+            <div className="flex flex-col md:flex-row md:items-center gap-4">
+              {/* Date Selection */}
+              <div className="flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-earth-500" />
+                <span className="text-sm text-earth-600 whitespace-nowrap">Sök ledig tid:</span>
+                <div className="flex gap-1 flex-wrap">
+                  <button
+                    onClick={() => {
+                      setSelectedDate(null);
+                      setSelectedTime(null);
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                      !selectedDate
+                        ? 'bg-brand-500 text-white'
+                        : 'bg-white border border-earth-200 text-earth-600 hover:bg-earth-100'
+                    }`}
+                  >
+                    Alla dagar
+                  </button>
+                  {[0, 1, 2, 3, 4, 5, 6].map(dayOffset => {
+                    const date = addDays(new Date(), dayOffset);
+                    const isSelected = selectedDate && format(selectedDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
+                    return (
+                      <button
+                        key={dayOffset}
+                        onClick={() => setSelectedDate(date)}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                          isSelected
+                            ? 'bg-brand-500 text-white'
+                            : 'bg-white border border-earth-200 text-earth-600 hover:bg-earth-100'
+                        }`}
+                      >
+                        {dayOffset === 0 ? 'Idag' : dayOffset === 1 ? 'Imorgon' : format(date, 'EEE d/M', { locale: sv })}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Time Selection - only show when date is selected */}
+            {selectedDate && (
+              <div className="mt-3 flex items-center gap-2 flex-wrap">
+                <Clock className="w-5 h-5 text-earth-500" />
+                <span className="text-sm text-earth-600">Tid:</span>
+                <button
+                  onClick={() => setSelectedTime(null)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    !selectedTime
+                      ? 'bg-green-500 text-white'
+                      : 'bg-white border border-earth-200 text-earth-600 hover:bg-earth-100'
+                  }`}
+                >
+                  Alla tider
+                </button>
+                {TIME_SLOTS.map(time => (
+                  <button
+                    key={time}
+                    onClick={() => setSelectedTime(time)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                      selectedTime === time
+                        ? 'bg-green-500 text-white'
+                        : 'bg-white border border-earth-200 text-earth-600 hover:bg-earth-100'
+                    }`}
+                  >
+                    {time}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Filter info */}
+            {selectedDate && (
+              <p className="mt-3 text-sm text-green-600">
+                {selectedTime 
+                  ? `Visar hovslagare lediga ${format(selectedDate, 'd MMMM', { locale: sv })} kl ${selectedTime}`
+                  : `Visar hovslagare med bokningar ${format(selectedDate, 'd MMMM', { locale: sv })}`
+                }
+                {displayFarriers.length > 0 && ` (${displayFarriers.length} st)`}
+              </p>
+            )}
+          </div>
+
           {/* Filters Panel */}
           {showFilters && (
             <div className="mt-4 p-4 bg-earth-50 rounded-xl animate-fade-in">
@@ -414,7 +574,7 @@ export default function FarriersPage() {
                 </button>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="label">Radie</label>
                   <select
@@ -427,19 +587,6 @@ export default function FarriersPage() {
                     <option value={50}>50 km</option>
                     <option value={100}>100 km</option>
                     <option value={200}>200 km</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="label">Lägsta betyg</label>
-                  <select
-                    className="input"
-                    value={filters.min_rating || ''}
-                    onChange={(e) => setFilters(prev => ({ ...prev, min_rating: e.target.value ? Number(e.target.value) : undefined }))}
-                  >
-                    <option value="">Alla</option>
-                    <option value={4}>4+ stjärnor</option>
-                    <option value={4.5}>4.5+ stjärnor</option>
                   </select>
                 </div>
                 

@@ -62,9 +62,16 @@ const createFarrierIcon = (name: string, color: string) => {
 
 const COLORS = ['#d4844a', '#567556', '#4a7fd4', '#d44a4a', '#9b4ad4'];
 
+// Tillgängliga tider att filtrera på
+const TIME_SLOTS = [
+  '08:00', '09:00', '10:00', '11:00', '12:00', 
+  '13:00', '14:00', '15:00', '16:00', '17:00'
+];
+
 export default function AvailabilityMap() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
 
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
 
@@ -81,6 +88,12 @@ export default function AvailabilityMap() {
   };
 
   const isToday = format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+
+  // Filtrera hovslagare baserat på vald tid
+  const filteredFarriers = data?.farriers.filter(farrier => {
+    if (!selectedTime) return true;
+    return farrier.available_times?.includes(selectedTime);
+  }) || [];
 
   return (
     <div className="min-h-[calc(100vh-4rem)]">
@@ -123,6 +136,44 @@ export default function AvailabilityMap() {
               </button>
             </div>
           </div>
+
+          {/* Time Filter */}
+          <div className="mt-4">
+            <p className="text-sm text-earth-600 mb-2 flex items-center gap-1">
+              <Clock className="w-4 h-4" />
+              Filtrera på tid:
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedTime(null)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  selectedTime === null
+                    ? 'bg-brand-500 text-white'
+                    : 'bg-earth-100 text-earth-600 hover:bg-earth-200'
+                }`}
+              >
+                Alla tider
+              </button>
+              {TIME_SLOTS.map(time => (
+                <button
+                  key={time}
+                  onClick={() => setSelectedTime(time)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    selectedTime === time
+                      ? 'bg-brand-500 text-white'
+                      : 'bg-earth-100 text-earth-600 hover:bg-earth-200'
+                  }`}
+                >
+                  {time}
+                </button>
+              ))}
+            </div>
+            {selectedTime && (
+              <p className="mt-2 text-sm text-green-600">
+                Visar {filteredFarriers.length} hovslagare lediga kl {selectedTime}
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -148,7 +199,7 @@ export default function AvailabilityMap() {
                   />
                   
                   {/* Markers for each farrier */}
-                  {data?.farriers.map((farrier, index) => {
+                  {filteredFarriers.map((farrier, index) => {
                     if (!farrier.primary_coordinates) return null;
                     
                     const color = COLORS[index % COLORS.length];
@@ -300,19 +351,24 @@ export default function AvailabilityMap() {
               <div className="card p-4">
                 <h2 className="font-display text-lg font-semibold text-earth-900 mb-1">
                   Hovslagare {format(selectedDate, 'd/M', { locale: sv })}
+                  {selectedTime && ` kl ${selectedTime}`}
                 </h2>
                 <p className="text-sm text-earth-500 mb-4">
-                  {data?.farriers.length || 0} hovslagare har bokningar
+                  {filteredFarriers.length} hovslagare {selectedTime ? 'lediga' : 'har bokningar'}
                 </p>
                 
-                {data?.farriers.length === 0 ? (
+                {filteredFarriers.length === 0 ? (
                   <div className="text-center py-8">
                     <Calendar className="w-12 h-12 text-earth-300 mx-auto mb-3" />
-                    <p className="text-earth-500">Inga bokningar denna dag</p>
+                    <p className="text-earth-500">
+                      {selectedTime 
+                        ? `Inga hovslagare lediga kl ${selectedTime}` 
+                        : 'Inga bokningar denna dag'}
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {data?.farriers.map((farrier, index) => (
+                    {filteredFarriers.map((farrier, index) => (
                       <div
                         key={farrier.farrier_id}
                         className="p-4 bg-earth-50 rounded-xl hover:bg-earth-100 transition-colors"
@@ -350,10 +406,17 @@ export default function AvailabilityMap() {
                               <div className="mt-2">
                                 <p className="text-xs text-green-600 font-medium mb-1">Lediga tider:</p>
                                 <div className="flex flex-wrap gap-1">
-                                  {farrier.available_times.slice(0, 4).map(time => (
+                                  {(selectedTime 
+                                    ? [selectedTime, ...farrier.available_times.filter(t => t !== selectedTime).slice(0, 3)]
+                                    : farrier.available_times.slice(0, 4)
+                                  ).map(time => (
                                     <span 
                                       key={time} 
-                                      className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-xs"
+                                      className={`px-1.5 py-0.5 rounded text-xs ${
+                                        time === selectedTime 
+                                          ? 'bg-brand-500 text-white font-medium' 
+                                          : 'bg-green-100 text-green-700'
+                                      }`}
                                     >
                                       {time}
                                     </span>
