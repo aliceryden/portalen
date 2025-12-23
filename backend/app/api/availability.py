@@ -6,7 +6,7 @@ from datetime import datetime, date, timedelta
 
 from app.core.database import get_db
 from app.models.booking import Booking
-from app.models.farrier import Farrier
+from app.models.farrier import Farrier, FarrierSchedule
 from app.models.user import User
 
 router = APIRouter()
@@ -58,6 +58,44 @@ def get_nearby_areas(area: str) -> List[str]:
     return [area] + nearby
 
 
+def get_available_times(schedule_start, schedule_end, booked_times: List[dict], duration: int = 60) -> List[str]:
+    """Beräkna lediga tider baserat på schema och bokningar"""
+    available = []
+    
+    # Hantera både string och time-objekt
+    if hasattr(schedule_start, 'hour'):
+        start_hour = schedule_start.hour
+    else:
+        start_hour = int(str(schedule_start).split(':')[0])
+    
+    if hasattr(schedule_end, 'hour'):
+        end_hour = schedule_end.hour
+    else:
+        end_hour = int(str(schedule_end).split(':')[0])
+    
+    # Skapa lista med alla möjliga tider (varje timme)
+    current_hour = start_hour
+    while current_hour < end_hour:
+        time_str = f"{current_hour:02d}:00"
+        
+        # Kolla om tiden är bokad
+        is_booked = False
+        for booking in booked_times:
+            booking_hour = int(booking["time"].split(':')[0])
+            booking_duration = booking.get("duration", 60)
+            # Om bokningen överlappar denna tid
+            if booking_hour <= current_hour < booking_hour + (booking_duration // 60):
+                is_booked = True
+                break
+        
+        if not is_booked:
+            available.append(time_str)
+        
+        current_hour += 1
+    
+    return available
+
+
 @router.get("/farrier-locations")
 async def get_farrier_daily_locations(
     date_str: Optional[str] = Query(None, description="Datum (YYYY-MM-DD), default idag"),
@@ -71,6 +109,9 @@ async def get_farrier_daily_locations(
         target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
     else:
         target_date = date.today()
+    
+    # Vilken veckodag (0 = måndag)
+    day_of_week = target_date.weekday()
     
     # Hämta alla bekräftade bokningar för datumet
     start_of_day = datetime.combine(target_date, datetime.min.time())
@@ -91,6 +132,14 @@ async def get_farrier_daily_locations(
         farrier_id = booking.farrier_id
         if farrier_id not in farrier_locations:
             farrier = booking.farrier
+            
+            # Hämta hovslagarens schema för denna veckodag
+            schedule = db.query(FarrierSchedule).filter(
+                FarrierSchedule.farrier_id == farrier_id,
+                FarrierSchedule.day_of_week == day_of_week,
+                FarrierSchedule.is_available == True
+            ).first()
+            
             farrier_locations[farrier_id] = {
                 "farrier_id": farrier_id,
                 "farrier_name": f"{farrier.user.first_name} {farrier.user.last_name}",
@@ -102,6 +151,9 @@ async def get_farrier_daily_locations(
                 "bookings": [],
                 "primary_location": None,
                 "primary_coordinates": None,
+                "schedule_start": schedule.start_time if schedule else "08:00",
+                "schedule_end": schedule.end_time if schedule else "17:00",
+                "available_times": [],
             }
         
         area = booking.location_city
@@ -114,13 +166,14 @@ async def get_farrier_daily_locations(
         farrier_locations[farrier_id]["bookings"].append({
             "id": booking.id,
             "time": booking.scheduled_date.strftime("%H:%M"),
+            "duration": booking.duration_minutes,
             "service": booking.service_type,
             "location": area,
             "latitude": booking.location_latitude,
             "longitude": booking.location_longitude,
         })
     
-    # Konvertera till lista och beräkna primär plats
+    # Konvertera till lista och beräkna primär plats + lediga tider
     result = []
     for farrier_id, data in farrier_locations.items():
         # Hitta den mest frekventa platsen (primär)
@@ -130,6 +183,17 @@ async def get_farrier_daily_locations(
             data["primary_location"] = primary
             if primary in AREA_COORDINATES:
                 data["primary_coordinates"] = AREA_COORDINATES[primary]
+        
+        # Beräkna lediga tider
+        data["available_times"] = get_available_times(
+            data["schedule_start"],
+            data["schedule_end"],
+            data["bookings"]
+        )
+        
+        # Ta bort interna fält som inte ska skickas
+        del data["schedule_start"]
+        del data["schedule_end"]
         
         data["booked_areas"] = list(data["booked_areas"])
         data["available_areas"] = list(data["available_areas"])
