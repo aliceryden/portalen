@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { MapContainer, TileLayer, Marker, Popup, Circle, Tooltip } from 'react-leaflet';
 import { Icon, DivIcon } from 'leaflet';
@@ -98,7 +99,7 @@ export default function AvailabilityMap() {
   return (
     <div className="min-h-[calc(100vh-4rem)]">
       {/* Header */}
-      <div className="bg-white border-b border-earth-100 sticky top-16 z-40">
+      <div className="bg-white border-b border-earth-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
@@ -253,7 +254,6 @@ export default function AvailabilityMap() {
                               <h3 className="font-bold text-lg">
                                 {farrier.business_name || farrier.farrier_name}
                               </h3>
-                              <p className="text-gray-600 text-sm mb-2">{farrier.farrier_name}</p>
                               
                               {/* Lediga tider */}
                               {farrier.available_times.length > 0 && (
@@ -281,33 +281,24 @@ export default function AvailabilityMap() {
                               </div>
                               
                               <div className="border-t pt-2 mt-2">
-                                <p className="font-medium text-sm mb-1">Tillgänglig i:</p>
-                                <div className="flex flex-wrap gap-1">
-                                  {farrier.available_areas.slice(0, 5).map(area => (
-                                    <span key={area} className="px-2 py-0.5 bg-forest-100 text-forest-700 rounded text-xs">
-                                      {area}
-                                    </span>
-                                  ))}
-                                  {farrier.available_areas.length > 5 && (
-                                    <span className="text-xs text-gray-500">
-                                      +{farrier.available_areas.length - 5} till
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                              
-                              <div className="border-t pt-2 mt-2">
-                                <p className="font-medium text-sm">{farrier.bookings.length} bokningar</p>
+                                <p className="font-medium text-sm">{farrier.bookings.length} bokningar idag</p>
                               </div>
                               
                               {farrier.phone && (
                                 <a
                                   href={`tel:${farrier.phone}`}
-                                  className="mt-2 block text-center bg-brand-500 text-white py-1 px-3 rounded text-sm hover:bg-brand-600"
+                                  className="mt-3 block text-center bg-earth-100 text-earth-700 py-2 px-3 rounded text-sm hover:bg-earth-200"
                                 >
                                   📞 {farrier.phone}
                                 </a>
                               )}
+                              
+                              <Link
+                                to={`/owner/bookings/new/${farrier.farrier_id}`}
+                                className="mt-2 block text-center bg-brand-500 text-white py-2 px-3 rounded text-sm font-medium hover:bg-brand-600"
+                              >
+                                Boka tid
+                              </Link>
                             </div>
                           </Popup>
                         </Marker>

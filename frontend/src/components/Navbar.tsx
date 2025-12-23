@@ -147,7 +147,7 @@ export default function Navbar() {
                     )}
                     
                     <Link
-                      to={`${getDashboardLink()}/settings`}
+                      to="/settings"
                       onClick={() => setShowUserMenu(false)}
                       className="flex items-center gap-3 px-4 py-2 text-earth-700 hover:bg-earth-50"
                     >
@@ -248,6 +248,13 @@ export default function Navbar() {
                   className="block px-4 py-3 rounded-xl text-earth-700 hover:bg-earth-50"
                 >
                   Dashboard
+                </Link>
+                <Link
+                  to="/settings"
+                  onClick={() => setIsOpen(false)}
+                  className="block px-4 py-3 rounded-xl text-earth-700 hover:bg-earth-50"
+                >
+                  Inställningar
                 </Link>
                 <button
                   onClick={() => {
