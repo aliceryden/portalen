@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings
-from typing import Optional
+from typing import Optional, List
 
 
 class Settings(BaseSettings):
@@ -13,6 +13,18 @@ class Settings(BaseSettings):
     
     # App
     DEBUG: bool = True
+    
+    # CORS - frontend URLs (kommaseparerade i produktion)
+    FRONTEND_URL: str = "http://localhost:5174"
+    ALLOWED_ORIGINS: str = "http://localhost:5173,http://localhost:5174,http://localhost:3000"
+    
+    @property
+    def cors_origins(self) -> List[str]:
+        """Parse comma-separated origins into list"""
+        origins = self.ALLOWED_ORIGINS.split(",")
+        if self.FRONTEND_URL and self.FRONTEND_URL not in origins:
+            origins.append(self.FRONTEND_URL)
+        return [o.strip() for o in origins if o.strip()]
     
     class Config:
         env_file = ".env"
