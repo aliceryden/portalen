@@ -33,6 +33,9 @@ import AdminDashboard from './pages/admin/Dashboard';
 import AdminUsers from './pages/admin/Users';
 import AdminBookings from './pages/admin/Bookings';
 
+// Shared pages
+import SettingsPage from './pages/SettingsPage';
+
 function App() {
   const { fetchUser, isLoading } = useAuthStore();
 
@@ -92,6 +95,11 @@ function App() {
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="bookings" element={<AdminBookings />} />
+          </Route>
+          
+          {/* Settings - for all logged in users */}
+          <Route path="settings" element={<ProtectedRoute allowedRoles={['horse_owner', 'farrier', 'admin']} />}>
+            <Route index element={<SettingsPage />} />
           </Route>
         </Route>
         

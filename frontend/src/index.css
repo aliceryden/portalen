@@ -82,10 +82,25 @@
 .leaflet-container {
   @apply rounded-xl;
   font-family: inherit;
+  z-index: 10 !important;
+}
+
+/* Säkerställ att kartans popups och kontroller stannar under sticky header */
+.leaflet-pane,
+.leaflet-control {
+  z-index: 10 !important;
+}
+
+.leaflet-popup-pane {
+  z-index: 30 !important;
 }
 
 .leaflet-popup-content-wrapper {
   @apply rounded-xl shadow-lg;
+}
+
+.leaflet-tooltip-pane {
+  z-index: 25 !important;
 }
 
 .leaflet-tooltip {
