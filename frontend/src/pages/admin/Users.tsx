@@ -179,7 +179,7 @@ export default function AdminUsers() {
                           <span className="badge-error">Inaktiv</span>
                         )}
                         {user.is_verified && (
-                          <CheckCircle className="w-4 h-4 text-forest-500" title="Verifierad" />
+                          <CheckCircle className="w-4 h-4 text-forest-500" />
                         )}
                       </div>
                     </td>

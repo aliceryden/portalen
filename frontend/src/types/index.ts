@@ -184,7 +184,7 @@ export interface RegisterFormData {
   password: string;
   first_name: string;
   last_name: string;
-  phone: string;
+  phone?: string;
   role: 'horse_owner' | 'farrier';
 }
 
@@ -206,6 +206,7 @@ export interface HorseFormData {
   stable_name?: string;
   stable_address?: string;
   stable_city?: string;
+  image_url?: string;
 }
 
 export interface BookingFormData {

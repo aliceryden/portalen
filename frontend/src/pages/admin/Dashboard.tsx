@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
-  Users, Calendar, Star, TrendingUp, ArrowUpRight, ArrowDownRight,
-  UserCheck, HardHat, HorseIcon
+  Users, Calendar, Star, TrendingUp, ArrowUpRight,
+  UserCheck, HardHat
 } from 'lucide-react';
 import { adminApi } from '../../services/api';
 

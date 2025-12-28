@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { Calendar, Clock, MapPin, ArrowRight, Check } from 'lucide-react';
+import { Calendar, Clock, MapPin, ArrowRight, ArrowLeft, Check } from 'lucide-react';
 import BackButton from '../../components/BackButton';
 import toast from 'react-hot-toast';
 import { farriersApi, horsesApi, bookingsApi } from '../../services/api';

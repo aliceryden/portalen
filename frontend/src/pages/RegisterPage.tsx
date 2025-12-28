@@ -27,7 +27,6 @@ export default function RegisterPage() {
     register,
     handleSubmit,
     watch,
-    setValue,
     formState: { errors },
   } = useForm<RegisterFormData & { confirmPassword: string }>({
     defaultValues: {
@@ -36,12 +35,6 @@ export default function RegisterPage() {
   });
 
   const selectedRole = watch('role');
-
-  // Capitalize first letter helper
-  const capitalizeFirst = (str: string) => {
-    if (!str) return str;
-    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-  };
 
   const onSubmit = async (data: RegisterFormData & { confirmPassword: string }) => {
     try {
