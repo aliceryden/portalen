@@ -36,7 +36,7 @@ export default function SettingsPage() {
     queryFn: usersApi.getProfile,
   });
 
-  const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm<ProfileFormData>();
+  const { register, handleSubmit, reset, setValue } = useForm<ProfileFormData>();
 
   const passwordForm = useForm<PasswordFormData>();
 
@@ -132,12 +132,12 @@ export default function SettingsPage() {
     );
   }
 
-  const tabs = [
+  const tabs: Array<{ id: 'profile' | 'password' | 'notifications' | 'danger'; label: string; icon: typeof User; danger?: boolean }> = [
     { id: 'profile', label: 'Profil', icon: User },
     { id: 'password', label: 'Säkerhet', icon: Shield },
     { id: 'notifications', label: 'Aviseringar', icon: Bell },
     { id: 'danger', label: 'Konto', icon: Trash2, danger: true },
-  ] as const;
+  ];
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-b from-brand-50 to-white">

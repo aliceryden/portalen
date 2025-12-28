@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Calendar, Clock, MapPin, Search } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import BackButton from '../../components/BackButton';
 import { adminApi } from '../../services/api';
 import { format } from 'date-fns';
@@ -72,17 +72,7 @@ export default function AdminBookings() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-earth-100">
-                {bookings?.map((booking: { 
-                  id: number;
-                  scheduled_date: string;
-                  service_type: string;
-                  horse_owner: string;
-                  farrier: string;
-                  horse: string;
-                  status: string;
-                  total_price: number;
-                  created_at: string;
-                }) => (
+                {bookings?.map((booking) => (
                   <tr key={booking.id} className="hover:bg-earth-50">
                     <td className="p-4 text-earth-500 text-sm">#{booking.id}</td>
                     <td className="p-4">
@@ -96,9 +86,9 @@ export default function AdminBookings() {
                       </div>
                     </td>
                     <td className="p-4 text-earth-900">{booking.service_type}</td>
-                    <td className="p-4 text-earth-700">{booking.horse_owner}</td>
-                    <td className="p-4 text-earth-700">{booking.farrier}</td>
-                    <td className="p-4 text-earth-700">{booking.horse}</td>
+                    <td className="p-4 text-earth-700">{booking.owner_name}</td>
+                    <td className="p-4 text-earth-700">{booking.farrier_name}</td>
+                    <td className="p-4 text-earth-700">{booking.horse_name}</td>
                     <td className="p-4">
                       <span className={STATUS_MAP[booking.status]?.class}>
                         {STATUS_MAP[booking.status]?.label}

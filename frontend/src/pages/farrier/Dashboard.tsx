@@ -38,7 +38,6 @@ export default function FarrierDashboard() {
 
   const bookingsList = bookings || [];
   const pendingBookings = bookingsList.filter(b => b.status === 'pending');
-  const confirmedBookings = bookingsList.filter(b => b.status === 'confirmed');
   const todayBookings = bookingsList.filter(b => 
     ['confirmed', 'in_progress'].includes(b.status) &&
     b.scheduled_date &&

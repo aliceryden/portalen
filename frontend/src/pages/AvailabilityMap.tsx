@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { MapContainer, TileLayer, Marker, Popup, Circle, Tooltip } from 'react-leaflet';
-import { Icon, DivIcon } from 'leaflet';
-import { Calendar, Clock, MapPin, Phone, Star, ChevronLeft, ChevronRight, Users } from 'lucide-react';
+import { DivIcon } from 'leaflet';
+import { Calendar, Clock, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import api from '../services/api';
@@ -71,7 +71,6 @@ const TIME_SLOTS = [
 
 export default function AvailabilityMap() {
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [selectedArea, setSelectedArea] = useState<string | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
 
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
