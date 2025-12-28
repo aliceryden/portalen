@@ -3,13 +3,13 @@ import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Calendar, Clock, MapPin, Star, X, MessageSquare, Eye, Phone, Mail, 
-  ChevronDown, History, CalendarDays, CheckCircle, XCircle, AlertCircle
+  ChevronDown, History, CalendarDays, AlertCircle
 } from 'lucide-react';
 import BackButton from '../../components/BackButton';
 import toast from 'react-hot-toast';
 import { bookingsApi, reviewsApi } from '../../services/api';
 import type { Booking } from '../../types';
-import { format, parseISO, isAfter, isBefore, startOfDay } from 'date-fns';
+import { format, parseISO, isAfter, startOfDay } from 'date-fns';
 import { sv } from 'date-fns/locale';
 
 const STATUS_MAP: Record<string, { label: string; class: string }> = {
@@ -38,17 +38,13 @@ export default function MyBookings() {
   });
 
   // Split bookings into upcoming and history
-  const { upcomingBookings, historyBookings, availableYears, stats } = useMemo(() => {
-    if (!bookings) return { upcomingBookings: [], historyBookings: [], availableYears: [], stats: null };
+  const { upcomingBookings, historyBookings, availableYears } = useMemo(() => {
+    if (!bookings) return { upcomingBookings: [], historyBookings: [], availableYears: [] };
     
     const today = startOfDay(new Date());
     const upcoming: Booking[] = [];
     const history: Booking[] = [];
     const yearsSet = new Set<string>();
-    
-    let totalSpent = 0;
-    let completedCount = 0;
-    let cancelledCount = 0;
 
     bookings.forEach((booking) => {
       const bookingDate = parseISO(booking.scheduled_date);
@@ -60,14 +56,6 @@ export default function MyBookings() {
       } else {
         history.push(booking);
         yearsSet.add(format(bookingDate, 'yyyy'));
-      }
-
-      if (booking.status === 'completed') {
-        completedCount++;
-        totalSpent += booking.total_price || 0;
-      }
-      if (booking.status === 'cancelled') {
-        cancelledCount++;
       }
     });
 
@@ -86,13 +74,7 @@ export default function MyBookings() {
     return { 
       upcomingBookings: upcoming, 
       historyBookings: history, 
-      availableYears: years,
-      stats: {
-        totalSpent,
-        completedCount,
-        cancelledCount,
-        upcomingCount: upcoming.length
-      }
+      availableYears: years
     };
   }, [bookings]);
 
@@ -332,40 +314,6 @@ export default function MyBookings() {
           Boka ny tid
         </Link>
       </div>
-
-      {/* Quick Stats */}
-      {stats && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-          <div className="bg-white rounded-xl border border-earth-100 p-4">
-            <div className="flex items-center gap-2 text-brand-600 mb-1">
-              <CalendarDays className="w-4 h-4" />
-              <span className="text-xs font-medium uppercase tracking-wide">Kommande</span>
-            </div>
-            <p className="text-2xl font-bold text-earth-900">{stats.upcomingCount}</p>
-          </div>
-          <div className="bg-white rounded-xl border border-earth-100 p-4">
-            <div className="flex items-center gap-2 text-green-600 mb-1">
-              <CheckCircle className="w-4 h-4" />
-              <span className="text-xs font-medium uppercase tracking-wide">Slutförda</span>
-            </div>
-            <p className="text-2xl font-bold text-earth-900">{stats.completedCount}</p>
-          </div>
-          <div className="bg-white rounded-xl border border-earth-100 p-4">
-            <div className="flex items-center gap-2 text-red-500 mb-1">
-              <XCircle className="w-4 h-4" />
-              <span className="text-xs font-medium uppercase tracking-wide">Avbokade</span>
-            </div>
-            <p className="text-2xl font-bold text-earth-900">{stats.cancelledCount}</p>
-          </div>
-          <div className="bg-white rounded-xl border border-earth-100 p-4">
-            <div className="flex items-center gap-2 text-amber-600 mb-1">
-              <Star className="w-4 h-4" />
-              <span className="text-xs font-medium uppercase tracking-wide">Totalt spenderat</span>
-            </div>
-            <p className="text-2xl font-bold text-earth-900">{stats.totalSpent.toLocaleString('sv-SE')} kr</p>
-          </div>
-        </div>
-      )}
 
       {/* Tabs */}
       <div className="flex gap-1 p-1 bg-earth-100 rounded-xl mb-6">
