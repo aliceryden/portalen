@@ -143,8 +143,34 @@ export default function FarriersPage() {
   }, [selectedHorse, searchMode]);
 
   // Auto-collapse the filter panel when the user scrolls down towards the map.
+  // Note: scrolling over the Leaflet map often zooms the map instead of scrolling the page,
+  // so we also use IntersectionObserver to collapse as soon as the map is in view.
   useEffect(() => {
     if (!showFilters) return;
+
+    // Close immediately if map is already in view.
+    const initialTop = mapContainerRef.current?.getBoundingClientRect().top;
+    if (typeof initialTop === 'number' && initialTop < window.innerHeight * 0.6) {
+      setShowFilters(false);
+      return;
+    }
+
+    let observer: IntersectionObserver | null = null;
+    if (mapContainerRef.current && 'IntersectionObserver' in window) {
+      observer = new IntersectionObserver(
+        (entries) => {
+          const entry = entries[0];
+          if (entry?.isIntersecting) {
+            setShowFilters(false);
+          }
+        },
+        {
+          root: null,
+          threshold: 0.01,
+        }
+      );
+      observer.observe(mapContainerRef.current);
+    }
 
     let raf = 0;
     const onScroll = () => {
@@ -166,6 +192,7 @@ export default function FarriersPage() {
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
     return () => {
+      observer?.disconnect();
       cancelAnimationFrame(raf);
       window.removeEventListener('scroll', onScroll);
     };
