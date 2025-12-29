@@ -162,19 +162,19 @@ export default function AvailabilityMap() {
             <div className="grid md:grid-cols-2 gap-4">
               {/* Area Search */}
               <div>
-                <p className="text-sm text-earth-600 mb-2 flex items-center gap-1">
-                  <Search className="w-4 h-4" />
-                  Sök område:
-                </p>
                 <div className="flex gap-2">
                   <div className="flex-1">
-                    <input
-                      list="area-options"
-                      value={selectedArea}
-                      onChange={(e) => setSelectedArea(e.target.value)}
-                      placeholder="Skriv t.ex. Täby, Åkersberga..."
-                      className="input"
-                    />
+                    <div className="flex items-center gap-3 px-4 py-3 bg-earth-50 rounded-xl border border-earth-200">
+                      <Search className="w-5 h-5 text-earth-400" />
+                      <input
+                        list="area-options"
+                        value={selectedArea}
+                        onChange={(e) => setSelectedArea(e.target.value)}
+                        placeholder="Sök på område"
+                        aria-label="Sök på område"
+                        className="w-full bg-transparent focus:outline-none text-earth-800 placeholder:text-earth-400"
+                      />
+                    </div>
                     <datalist id="area-options">
                       {allAreas.map((area) => (
                         <option key={area} value={area} />
