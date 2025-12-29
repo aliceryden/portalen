@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { Icon } from 'leaflet';
-import { Search, MapPin, Star, Filter, List, Map as MapIcon, SlidersHorizontal, X, CheckCircle, Clock, Calendar } from 'lucide-react';
+import { Search, MapPin, Star, Filter, List, Map as MapIcon, SlidersHorizontal, X, CheckCircle, Clock } from 'lucide-react';
 import { farriersApi, horsesApi } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import api from '../services/api';
@@ -478,8 +478,6 @@ export default function FarriersPage() {
             <div className="flex flex-col md:flex-row md:items-center gap-4">
               {/* Date Selection */}
               <div className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-earth-500" />
-                <span className="text-sm text-earth-600 whitespace-nowrap">Sök ledig tid:</span>
                 <div className="flex gap-1 flex-wrap">
                   <button
                     onClick={() => {
@@ -518,8 +516,6 @@ export default function FarriersPage() {
             {/* Time Selection - only show when date is selected */}
             {selectedDate && (
               <div className="mt-3 flex items-center gap-2 flex-wrap">
-                <Clock className="w-5 h-5 text-earth-500" />
-                <span className="text-sm text-earth-600">Tid:</span>
                 <button
                   onClick={() => setSelectedTime(null)}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
