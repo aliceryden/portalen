@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Calendar, Plus, ArrowRight, Clock, CheckCircle, Star, X } from 'lucide-react';
+import { Calendar, Plus, ArrowRight, Clock, Star, X } from 'lucide-react';
 import { horsesApi, bookingsApi, reviewsApi } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 import { format, differenceInYears, parseISO } from 'date-fns';
@@ -51,8 +51,6 @@ export default function OwnerDashboard() {
     new Date(b.scheduled_date) >= new Date()
   ).slice(0, 3);
 
-  const completedBookings = bookings?.filter(b => b.status === 'completed').length || 0;
-  
   const completedWithoutReview = bookings?.filter(b => 
     b.status === 'completed' && !b.has_review
   ).slice(0, 3) || [];
@@ -80,44 +78,7 @@ export default function OwnerDashboard() {
         </p>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="card p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-earth-500 text-sm">Mina hästar</p>
-              <p className="text-3xl font-bold text-earth-900">{horses?.length || 0}</p>
-            </div>
-            <div className="w-12 h-12 bg-brand-100 rounded-xl flex items-center justify-center">
-            </div>
-          </div>
-        </div>
-
-        <div className="card p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-earth-500 text-sm">Kommande bokningar</p>
-              <p className="text-3xl font-bold text-earth-900">{upcomingBookings?.length || 0}</p>
-            </div>
-            <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
-              <Clock className="w-6 h-6 text-amber-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="card p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-earth-500 text-sm">Slutförda bokningar</p>
-              <p className="text-3xl font-bold text-earth-900">{completedBookings}</p>
-            </div>
-            <div className="w-12 h-12 bg-forest-100 rounded-xl flex items-center justify-center">
-              <CheckCircle className="w-6 h-6 text-forest-600" />
-            </div>
-          </div>
-        </div>
-      </div>
-
+      {/* Quick Stats (removed) */}
       {/* Completed Bookings Needing Review */}
       {completedWithoutReview.length > 0 && (
         <div className="card mb-8 border-2 border-amber-200 bg-amber-50/50">
