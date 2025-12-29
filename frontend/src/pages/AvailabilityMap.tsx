@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { MapContainer, TileLayer, Marker, Popup, Circle, Tooltip } from 'react-leaflet';
 import { DivIcon } from 'leaflet';
-import { Calendar, Clock, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, Clock, MapPin, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import api from '../services/api';
@@ -72,6 +72,7 @@ const TIME_SLOTS = [
 export default function AvailabilityMap() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [selectedArea, setSelectedArea] = useState<string>('');
 
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
 
@@ -89,11 +90,30 @@ export default function AvailabilityMap() {
 
   const isToday = format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
 
-  // Filtrera hovslagare baserat på vald tid
-  const filteredFarriers = data?.farriers.filter(farrier => {
-    if (!selectedTime) return true;
-    return farrier.available_times?.includes(selectedTime);
-  }) || [];
+  const normalizedArea = selectedArea.trim().toLowerCase();
+
+  // Filtrera hovslagare baserat på vald tid + område
+  const filteredFarriers = useMemo(() => {
+    const farriers = data?.farriers || [];
+    return farriers.filter((farrier) => {
+      const timeOk = !selectedTime || farrier.available_times?.includes(selectedTime);
+      if (!timeOk) return false;
+
+      if (!normalizedArea) return true;
+
+      const areas = [
+        ...(farrier.booked_areas || []),
+        ...(farrier.available_areas || []),
+      ].map((a) => (a || '').toLowerCase());
+
+      return areas.some((a) => a.includes(normalizedArea));
+    });
+  }, [data?.farriers, normalizedArea, selectedTime]);
+
+  const allAreas = useMemo(() => {
+    const keys = Object.keys(data?.area_coordinates || {});
+    return keys;
+  }, [data?.area_coordinates]);
 
   return (
     <div className="min-h-[calc(100vh-4rem)]">
@@ -139,38 +159,66 @@ export default function AvailabilityMap() {
 
           {/* Time Filter */}
           <div className="mt-4">
-            <p className="text-sm text-earth-600 mb-2 flex items-center gap-1">
-              <Clock className="w-4 h-4" />
-              Filtrera på tid:
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => setSelectedTime(null)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  selectedTime === null
-                    ? 'bg-brand-500 text-white'
-                    : 'bg-earth-100 text-earth-600 hover:bg-earth-200'
-                }`}
-              >
-                Alla tider
-              </button>
-              {TIME_SLOTS.map(time => (
-                <button
-                  key={time}
-                  onClick={() => setSelectedTime(time)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    selectedTime === time
-                      ? 'bg-brand-500 text-white'
-                      : 'bg-earth-100 text-earth-600 hover:bg-earth-200'
-                  }`}
+            <div className="grid md:grid-cols-2 gap-4">
+              {/* Area Search */}
+              <div>
+                <p className="text-sm text-earth-600 mb-2 flex items-center gap-1">
+                  <Search className="w-4 h-4" />
+                  Sök område:
+                </p>
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <input
+                      list="area-options"
+                      value={selectedArea}
+                      onChange={(e) => setSelectedArea(e.target.value)}
+                      placeholder="Skriv t.ex. Täby, Åkersberga..."
+                      className="input"
+                    />
+                    <datalist id="area-options">
+                      {allAreas.map((area) => (
+                        <option key={area} value={area} />
+                      ))}
+                    </datalist>
+                  </div>
+                  {selectedArea.trim() && (
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={() => setSelectedArea('')}
+                    >
+                      Rensa
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Time Dropdown */}
+              <div>
+                <p className="text-sm text-earth-600 mb-2 flex items-center gap-1">
+                  <Clock className="w-4 h-4" />
+                  Filtrera på tid:
+                </p>
+                <select
+                  className="input"
+                  value={selectedTime ?? ''}
+                  onChange={(e) => setSelectedTime(e.target.value ? e.target.value : null)}
                 >
-                  {time}
-                </button>
-              ))}
+                  <option value="">Alla tider</option>
+                  {TIME_SLOTS.map((time) => (
+                    <option key={time} value={time}>
+                      {time}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-            {selectedTime && (
+
+            {(selectedTime || selectedArea.trim()) && (
               <p className="mt-2 text-sm text-green-600">
-                Visar {filteredFarriers.length} hovslagare lediga kl {selectedTime}
+                Visar {filteredFarriers.length} hovslagare
+                {selectedTime ? ` lediga kl ${selectedTime}` : ''}
+                {selectedArea.trim() ? ` i/kring “${selectedArea.trim()}”` : ''}
               </p>
             )}
           </div>
