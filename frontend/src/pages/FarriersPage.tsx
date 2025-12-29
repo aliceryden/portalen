@@ -155,10 +155,19 @@ export default function FarriersPage() {
     let raf = 0;
     const updateCollapsed = () => {
       const mapTop = mapContainerRef.current?.getBoundingClientRect().top;
-      // Collapse when the map is approaching the viewport.
-      const shouldCollapse = typeof mapTop === 'number' && mapTop < 260;
-      setFiltersCollapsed(shouldCollapse);
-      if (shouldCollapse) setShowFilters(false);
+      if (typeof mapTop !== 'number') return;
+
+      // Hysteresis to prevent flicker:
+      // - Collapse when approaching the map
+      // - Expand only when the user scrolls up enough
+      const COLLAPSE_AT = 260;
+      const EXPAND_AT = 360;
+
+      setFiltersCollapsed((prev) => {
+        const next = prev ? mapTop < EXPAND_AT : mapTop < COLLAPSE_AT;
+        if (next) setShowFilters(false);
+        return next;
+      });
     };
 
     const onScroll = () => {
@@ -175,8 +184,6 @@ export default function FarriersPage() {
           if (entry?.isIntersecting) {
             setFiltersCollapsed(true);
             setShowFilters(false);
-          } else {
-            setFiltersCollapsed(false);
           }
         },
         { threshold: 0.01 }
@@ -527,152 +534,156 @@ export default function FarriersPage() {
 
           {/* Date & Time Filter + Advanced Filters (auto-collapsible when map is in view) */}
           <div
-            className={`mt-4 rounded-xl transition-all duration-300 ease-in-out ${
-              filtersCollapsed ? 'max-h-0 opacity-0 overflow-hidden pointer-events-none -translate-y-2' : 'max-h-[520px] opacity-100'
+            className={`mt-4 grid transition-[grid-template-rows,opacity,transform] duration-300 ease-in-out ${
+              filtersCollapsed
+                ? 'grid-rows-[0fr] opacity-0 -translate-y-2 pointer-events-none'
+                : 'grid-rows-[1fr] opacity-100 translate-y-0'
             }`}
           >
-            <div className="p-4 bg-earth-50 rounded-xl">
-            <div className="flex flex-col md:flex-row md:items-center gap-4">
-              {/* Date Selection */}
-              <div className="flex items-center gap-2">
-                <div className="flex gap-1 flex-wrap">
-                  <button
-                    onClick={() => {
-                      setSelectedDate(null);
-                      setSelectedTime(null);
-                    }}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                      !selectedDate
-                        ? 'bg-brand-500 text-white'
-                        : 'bg-white border border-earth-200 text-earth-600 hover:bg-earth-100'
-                    }`}
-                  >
-                    Alla dagar
-                  </button>
-                  {[0, 1, 2, 3, 4, 5, 6].map(dayOffset => {
-                    const date = addDays(new Date(), dayOffset);
-                    const isSelected = selectedDate && format(selectedDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
-                    return (
+            <div className="min-h-0 overflow-hidden">
+              <div className="p-4 bg-earth-50 rounded-xl">
+                <div className="flex flex-col md:flex-row md:items-center gap-4">
+                  {/* Date Selection */}
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-1 flex-wrap">
                       <button
-                        key={dayOffset}
-                        onClick={() => setSelectedDate(date)}
+                        onClick={() => {
+                          setSelectedDate(null);
+                          setSelectedTime(null);
+                        }}
                         className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                          isSelected
+                          !selectedDate
                             ? 'bg-brand-500 text-white'
                             : 'bg-white border border-earth-200 text-earth-600 hover:bg-earth-100'
                         }`}
                       >
-                        {dayOffset === 0 ? 'Idag' : dayOffset === 1 ? 'Imorgon' : format(date, 'EEE d/M', { locale: sv })}
+                        Alla dagar
                       </button>
-                    );
-                  })}
+                      {[0, 1, 2, 3, 4, 5, 6].map(dayOffset => {
+                        const date = addDays(new Date(), dayOffset);
+                        const isSelected = selectedDate && format(selectedDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
+                        return (
+                          <button
+                            key={dayOffset}
+                            onClick={() => setSelectedDate(date)}
+                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                              isSelected
+                                ? 'bg-brand-500 text-white'
+                                : 'bg-white border border-earth-200 text-earth-600 hover:bg-earth-100'
+                            }`}
+                          >
+                            {dayOffset === 0 ? 'Idag' : dayOffset === 1 ? 'Imorgon' : format(date, 'EEE d/M', { locale: sv })}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Time Selection - only show when date is selected */}
-            {selectedDate && (
-              <div className="mt-3 flex items-center gap-2 flex-wrap">
-                <button
-                  onClick={() => setSelectedTime(null)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    !selectedTime
-                      ? 'bg-green-500 text-white'
-                      : 'bg-white border border-earth-200 text-earth-600 hover:bg-earth-100'
-                  }`}
-                >
-                  Alla tider
-                </button>
-                {TIME_SLOTS.map(time => (
-                  <button
-                    key={time}
-                    onClick={() => setSelectedTime(time)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                      selectedTime === time
-                        ? 'bg-green-500 text-white'
-                        : 'bg-white border border-earth-200 text-earth-600 hover:bg-earth-100'
-                    }`}
-                  >
-                    {time}
-                  </button>
-                ))}
-              </div>
-            )}
+                {/* Time Selection - only show when date is selected */}
+                {selectedDate && (
+                  <div className="mt-3 flex items-center gap-2 flex-wrap">
+                    <button
+                      onClick={() => setSelectedTime(null)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                        !selectedTime
+                          ? 'bg-green-500 text-white'
+                          : 'bg-white border border-earth-200 text-earth-600 hover:bg-earth-100'
+                      }`}
+                    >
+                      Alla tider
+                    </button>
+                    {TIME_SLOTS.map(time => (
+                      <button
+                        key={time}
+                        onClick={() => setSelectedTime(time)}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                          selectedTime === time
+                            ? 'bg-green-500 text-white'
+                            : 'bg-white border border-earth-200 text-earth-600 hover:bg-earth-100'
+                        }`}
+                      >
+                        {time}
+                      </button>
+                    ))}
+                  </div>
+                )}
 
-            {/* Filter info */}
-            {selectedDate && (
-              <p className="mt-3 text-sm text-green-600">
-                {selectedTime 
-                  ? `Visar hovslagare lediga ${format(selectedDate, 'd MMMM', { locale: sv })} kl ${selectedTime}`
-                  : `Visar hovslagare med bokningar ${format(selectedDate, 'd MMMM', { locale: sv })}`
-                }
-                {displayFarriers.length > 0 && ` (${displayFarriers.length} st)`}
-              </p>
-            )}
-            </div>
+                {/* Filter info */}
+                {selectedDate && (
+                  <p className="mt-3 text-sm text-green-600">
+                    {selectedTime 
+                      ? `Visar hovslagare lediga ${format(selectedDate, 'd MMMM', { locale: sv })} kl ${selectedTime}`
+                      : `Visar hovslagare med bokningar ${format(selectedDate, 'd MMMM', { locale: sv })}`
+                    }
+                    {displayFarriers.length > 0 && ` (${displayFarriers.length} st)`}
+                  </p>
+                )}
+              </div>
 
-          {/* Filters Panel */}
-          {showFilters && (
-            <div className="mt-4 p-4 bg-earth-50 rounded-xl animate-fade-in">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-earth-900 flex items-center gap-2">
-                  <Filter className="w-5 h-5" />
-                  Filtrera resultat
-                </h3>
-                <button
-                  onClick={() => setShowFilters(false)}
-                  className="p-1 hover:bg-earth-200 rounded-lg"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="label">Radie</label>
-                  <select
-                    className="input"
-                    value={filters.radius_km}
-                    onChange={(e) => setFilters(prev => ({ ...prev, radius_km: Number(e.target.value) }))}
-                  >
-                    <option value={10}>10 km</option>
-                    <option value={25}>25 km</option>
-                    <option value={50}>50 km</option>
-                    <option value={100}>100 km</option>
-                    <option value={200}>200 km</option>
-                  </select>
+              {/* Filters Panel */}
+              {showFilters && (
+                <div className="mt-4 p-4 bg-earth-50 rounded-xl animate-fade-in">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold text-earth-900 flex items-center gap-2">
+                      <Filter className="w-5 h-5" />
+                      Filtrera resultat
+                    </h3>
+                    <button
+                      onClick={() => setShowFilters(false)}
+                      className="p-1 hover:bg-earth-200 rounded-lg"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="label">Radie</label>
+                      <select
+                        className="input"
+                        value={filters.radius_km}
+                        onChange={(e) => setFilters(prev => ({ ...prev, radius_km: Number(e.target.value) }))}
+                      >
+                        <option value={10}>10 km</option>
+                        <option value={25}>25 km</option>
+                        <option value={50}>50 km</option>
+                        <option value={100}>100 km</option>
+                        <option value={200}>200 km</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="label">Max pris</label>
+                      <select
+                        className="input"
+                        value={filters.max_price || ''}
+                        onChange={(e) => setFilters(prev => ({ ...prev, max_price: e.target.value ? Number(e.target.value) : undefined }))}
+                      >
+                        <option value="">Alla</option>
+                        <option value={500}>Max 500 kr</option>
+                        <option value={1000}>Max 1000 kr</option>
+                        <option value={1500}>Max 1500 kr</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="label">Tjänst</label>
+                      <select
+                        className="input"
+                        value={filters.service_type || ''}
+                        onChange={(e) => setFilters(prev => ({ ...prev, service_type: e.target.value || undefined }))}
+                      >
+                        <option value="">Alla tjänster</option>
+                        <option value="verkning">Verkning</option>
+                        <option value="skoning">Skoning</option>
+                        <option value="akut">Akut hovvård</option>
+                      </select>
+                    </div>
+                  </div>
                 </div>
-                
-                <div>
-                  <label className="label">Max pris</label>
-                  <select
-                    className="input"
-                    value={filters.max_price || ''}
-                    onChange={(e) => setFilters(prev => ({ ...prev, max_price: e.target.value ? Number(e.target.value) : undefined }))}
-                  >
-                    <option value="">Alla</option>
-                    <option value={500}>Max 500 kr</option>
-                    <option value={1000}>Max 1000 kr</option>
-                    <option value={1500}>Max 1500 kr</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="label">Tjänst</label>
-                  <select
-                    className="input"
-                    value={filters.service_type || ''}
-                    onChange={(e) => setFilters(prev => ({ ...prev, service_type: e.target.value || undefined }))}
-                  >
-                    <option value="">Alla tjänster</option>
-                    <option value="verkning">Verkning</option>
-                    <option value="skoning">Skoning</option>
-                    <option value="akut">Akut hovvård</option>
-                  </select>
-                </div>
-              </div>
+              )}
             </div>
-          )}
           </div>
         </div>
       </div>
