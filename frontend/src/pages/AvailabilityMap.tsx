@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { MapContainer, TileLayer, Marker, Popup, Circle, Tooltip } from 'react-leaflet';
 import { DivIcon } from 'leaflet';
-import { Calendar, Clock, MapPin, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { Calendar, Clock, MapPin, ChevronLeft, ChevronRight, ChevronDown, Search } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import api from '../services/api';
@@ -195,22 +195,25 @@ export default function AvailabilityMap() {
 
               {/* Time Dropdown */}
               <div>
-                <p className="text-sm text-earth-600 mb-2 flex items-center gap-1">
-                  <Clock className="w-4 h-4" />
-                  Filtrera på tid:
-                </p>
-                <select
-                  className="input"
-                  value={selectedTime ?? ''}
-                  onChange={(e) => setSelectedTime(e.target.value ? e.target.value : null)}
-                >
-                  <option value="">Alla tider</option>
-                  {TIME_SLOTS.map((time) => (
-                    <option key={time} value={time}>
-                      {time}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <div className="flex items-center gap-3 px-4 py-3 bg-earth-50 rounded-xl border border-earth-200">
+                    <Clock className="w-5 h-5 text-earth-400" />
+                    <select
+                      className="w-full bg-transparent focus:outline-none text-earth-800 placeholder:text-earth-400 appearance-none pr-8"
+                      value={selectedTime ?? ''}
+                      onChange={(e) => setSelectedTime(e.target.value ? e.target.value : null)}
+                      aria-label="Filtrera på tid"
+                    >
+                      <option value="">Alla tider</option>
+                      {TIME_SLOTS.map((time) => (
+                        <option key={time} value={time}>
+                          {time}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-5 h-5 text-earth-400 absolute right-4 pointer-events-none" />
+                  </div>
+                </div>
               </div>
             </div>
 
