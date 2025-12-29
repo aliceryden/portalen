@@ -195,6 +195,7 @@ export interface LoginFormData {
 
 export interface HorseFormData {
   name: string;
+  breed?: string;
   birth_date?: string;
   birth_year?: string;
   birth_month?: string;

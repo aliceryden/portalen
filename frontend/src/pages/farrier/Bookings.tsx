@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Calendar, Clock, MapPin, Check, X, MessageSquare, AlertCircle, Eye, ChevronDown, ChevronRight, Filter, List, CalendarDays } from 'lucide-react';
+import { Calendar, Clock, MapPin, Check, X, MessageSquare, AlertCircle, Eye, ChevronDown, ChevronRight, List, CalendarDays } from 'lucide-react';
 import BackButton from '../../components/BackButton';
 import toast from 'react-hot-toast';
 import { bookingsApi } from '../../services/api';
@@ -154,7 +154,7 @@ export default function FarrierBookings() {
   const pendingCount = bookings?.filter(b => b.status === 'pending').length || 0;
 
   // Booking Card Component
-  const BookingCard = ({ booking, compact = false }: { booking: Booking; compact?: boolean }) => (
+  const BookingCard = ({ booking }: { booking: Booking }) => (
     <div
       className={`bg-white border rounded-xl p-4 ${booking.status === 'pending' ? 'border-amber-300 bg-amber-50/50' : 'border-earth-200'} ${
         booking.status === 'completed' ? 'cursor-pointer hover:shadow-md transition-shadow' : ''
