@@ -62,6 +62,7 @@ export default function FarriersPage() {
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [showFilters, setShowFilters] = useState(false);
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  const [filtersCollapsed, setFiltersCollapsed] = useState(false);
   const [filters, setFilters] = useState<FarrierSearchFilters>({
     radius_km: 50,
   });
@@ -146,57 +147,51 @@ export default function FarriersPage() {
   // Note: scrolling over the Leaflet map often zooms the map instead of scrolling the page,
   // so we also use IntersectionObserver to collapse as soon as the map is in view.
   useEffect(() => {
-    if (!showFilters) return;
-
-    // Close immediately if map is already in view.
-    const initialTop = mapContainerRef.current?.getBoundingClientRect().top;
-    if (typeof initialTop === 'number' && initialTop < window.innerHeight * 0.6) {
-      setShowFilters(false);
+    if (viewMode !== 'map') {
+      setFiltersCollapsed(false);
       return;
     }
 
+    let raf = 0;
+    const updateCollapsed = () => {
+      const mapTop = mapContainerRef.current?.getBoundingClientRect().top;
+      // Collapse when the map is approaching the viewport.
+      const shouldCollapse = typeof mapTop === 'number' && mapTop < 260;
+      setFiltersCollapsed(shouldCollapse);
+      if (shouldCollapse) setShowFilters(false);
+    };
+
+    const onScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(updateCollapsed);
+    };
+
+    // Also observe the map entering view (robust when scrolling over the map).
     let observer: IntersectionObserver | null = null;
     if (mapContainerRef.current && 'IntersectionObserver' in window) {
       observer = new IntersectionObserver(
         (entries) => {
           const entry = entries[0];
           if (entry?.isIntersecting) {
+            setFiltersCollapsed(true);
             setShowFilters(false);
+          } else {
+            setFiltersCollapsed(false);
           }
         },
-        {
-          root: null,
-          threshold: 0.01,
-        }
+        { threshold: 0.01 }
       );
       observer.observe(mapContainerRef.current);
     }
 
-    let raf = 0;
-    const onScroll = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        const mapTop = mapContainerRef.current?.getBoundingClientRect().top;
-        // If map is near the viewport, collapse filters to give it more space.
-        if (typeof mapTop === 'number' && mapTop < 220) {
-          setShowFilters(false);
-          return;
-        }
-        // Fallback: if user scrolls a bit down, also collapse.
-        if (window.scrollY > 420) {
-          setShowFilters(false);
-        }
-      });
-    };
-
     window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
+    updateCollapsed();
     return () => {
       observer?.disconnect();
       cancelAnimationFrame(raf);
       window.removeEventListener('scroll', onScroll);
     };
-  }, [showFilters]);
+  }, [viewMode]);
 
   const { data: farriers, isLoading } = useQuery({
     queryKey: ['farriers', filters, searchMode],
@@ -530,8 +525,13 @@ export default function FarriersPage() {
             </div>
           </div>
 
-          {/* Date & Time Filter */}
-          <div className="mt-4 p-4 bg-earth-50 rounded-xl">
+          {/* Date & Time Filter + Advanced Filters (auto-collapsible when map is in view) */}
+          <div
+            className={`mt-4 rounded-xl transition-all duration-300 ease-in-out ${
+              filtersCollapsed ? 'max-h-0 opacity-0 overflow-hidden pointer-events-none -translate-y-2' : 'max-h-[520px] opacity-100'
+            }`}
+          >
+            <div className="p-4 bg-earth-50 rounded-xl">
             <div className="flex flex-col md:flex-row md:items-center gap-4">
               {/* Date Selection */}
               <div className="flex items-center gap-2">
@@ -609,7 +609,7 @@ export default function FarriersPage() {
                 {displayFarriers.length > 0 && ` (${displayFarriers.length} st)`}
               </p>
             )}
-          </div>
+            </div>
 
           {/* Filters Panel */}
           {showFilters && (
@@ -673,6 +673,7 @@ export default function FarriersPage() {
               </div>
             </div>
           )}
+          </div>
         </div>
       </div>
 
