@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
@@ -61,6 +61,7 @@ export default function FarriersPage() {
   const { isAuthenticated } = useAuthStore();
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [showFilters, setShowFilters] = useState(false);
+  const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const [filters, setFilters] = useState<FarrierSearchFilters>({
     radius_km: 50,
   });
@@ -140,6 +141,35 @@ export default function FarriersPage() {
       }
     }
   }, [selectedHorse, searchMode]);
+
+  // Auto-collapse the filter panel when the user scrolls down towards the map.
+  useEffect(() => {
+    if (!showFilters) return;
+
+    let raf = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const mapTop = mapContainerRef.current?.getBoundingClientRect().top;
+        // If map is near the viewport, collapse filters to give it more space.
+        if (typeof mapTop === 'number' && mapTop < 220) {
+          setShowFilters(false);
+          return;
+        }
+        // Fallback: if user scrolls a bit down, also collapse.
+        if (window.scrollY > 420) {
+          setShowFilters(false);
+        }
+      });
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('scroll', onScroll);
+    };
+  }, [showFilters]);
 
   const { data: farriers, isLoading } = useQuery({
     queryKey: ['farriers', filters, searchMode],
@@ -664,7 +694,10 @@ export default function FarriersPage() {
             )}
           </div>
         ) : (
-          <div className="h-[calc(100vh-16rem)] rounded-2xl overflow-hidden shadow-lg">
+          <div
+            ref={mapContainerRef}
+            className="h-[calc(100vh-16rem)] rounded-2xl overflow-hidden shadow-lg"
+          >
             {displayFarriers && displayFarriers.length > 0 ? (
               <MapContainer
                 center={getMapCenter()}
