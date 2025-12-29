@@ -205,9 +205,14 @@ export default function MyHorses() {
                       <span className="text-earth-400">Mankhöjd:</span> {horse.height_cm} cm
                     </p>
                   )}
-                  {(horse.stable_name || horse.stable_city) && (
+                  {horse.stable_name && (
                     <p className="text-earth-600">
-                      <span className="text-earth-400">Stall:</span> {horse.stable_name || horse.stable_city}
+                      <span className="text-earth-400">Stall:</span> {horse.stable_name}
+                    </p>
+                  )}
+                  {!horse.stable_name && horse.stable_city && (
+                    <p className="text-earth-600">
+                      <span className="text-earth-400">Ort:</span> {horse.stable_city}
                     </p>
                   )}
                   {horse.last_farrier_visit && (
