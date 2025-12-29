@@ -1,13 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Search, MapPin, Calendar, Star, Shield, Clock, ArrowRight } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { farriersApi } from '../services/api';
 
 export default function HomePage() {
-  const { data: ratingData } = useQuery({
-    queryKey: ['average-rating'],
-    queryFn: farriersApi.getAverageRating,
-  });
   return (
     <div className="overflow-hidden">
       {/* Hero Section */}
@@ -48,20 +42,7 @@ export default function HomePage() {
               </div>
             </div>
             
-            {/* Stats */}
-            {ratingData && ratingData.average_rating > 0 && (
-              <div className="flex flex-wrap gap-8 mt-12 animate-slide-up" style={{ animationDelay: '300ms' }}>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-3xl font-display font-bold text-white">
-                      {ratingData.average_rating.toFixed(1)}
-                    </p>
-                    <Star className="w-6 h-6 text-amber-400 fill-current" />
-                  </div>
-                  <p className="text-earth-400">Snittbetyg</p>
-                </div>
-              </div>
-            )}
+            {/* Stats (removed) */}
           </div>
         </div>
         
