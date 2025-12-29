@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
+import { useQueryClient } from '@tanstack/react-query';
 
 // Layout
 import Layout from './components/Layout';
@@ -37,7 +38,9 @@ import AdminBookings from './pages/admin/Bookings';
 import SettingsPage from './pages/SettingsPage';
 
 function App() {
-  const { fetchUser, isLoading } = useAuthStore();
+  const { fetchUser, isLoading, token } = useAuthStore();
+  const queryClient = useQueryClient();
+  const lastTokenRef = useRef<string | null>(token);
 
   useEffect(() => {
     fetchUser().catch(() => {
@@ -45,6 +48,15 @@ function App() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Important: prevent leaking cached data between users.
+  // When auth token changes (login/register/logout), clear React Query cache so all user-scoped data refetches.
+  useEffect(() => {
+    if (lastTokenRef.current !== token) {
+      queryClient.clear();
+      lastTokenRef.current = token;
+    }
+  }, [token, queryClient]);
 
   if (isLoading) {
     return (
