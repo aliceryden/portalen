@@ -113,7 +113,7 @@ async def get_farrier_daily_locations(
     # Vilken veckodag (0 = måndag)
     day_of_week = target_date.weekday()
     
-    # Hämta alla bekräftade bokningar för datumet
+    # Hämta alla bokningar för datumet (inkl pending så tider låses direkt)
     start_of_day = datetime.combine(target_date, datetime.min.time())
     end_of_day = datetime.combine(target_date, datetime.max.time())
     
@@ -122,7 +122,7 @@ async def get_farrier_daily_locations(
     ).filter(
         Booking.scheduled_date >= start_of_day,
         Booking.scheduled_date <= end_of_day,
-        Booking.status.in_(["confirmed", "in_progress"])
+        Booking.status.in_(["pending", "confirmed", "in_progress"])
     ).all()
     
     # Gruppera per hovslagare
@@ -235,7 +235,7 @@ async def get_available_farriers_in_area(
     ).filter(
         Booking.scheduled_date >= start_of_day,
         Booking.scheduled_date <= end_of_day,
-        Booking.status.in_(["confirmed", "in_progress"]),
+        Booking.status.in_(["pending", "confirmed", "in_progress"]),
         Booking.location_city.in_(search_areas)
     ).all()
     

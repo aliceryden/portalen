@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { Calendar, Clock, MapPin, ArrowRight, ArrowLeft, Check } from 'lucide-react';
 import BackButton from '../../components/BackButton';
 import toast from 'react-hot-toast';
-import { farriersApi, horsesApi, bookingsApi } from '../../services/api';
+import api, { farriersApi, horsesApi, bookingsApi } from '../../services/api';
 import type { BookingFormData } from '../../types';
 import { format, addDays } from 'date-fns';
 import { sv } from 'date-fns/locale';
@@ -30,6 +30,24 @@ export default function NewBooking() {
   const { data: horses } = useQuery({
     queryKey: ['horses'],
     queryFn: horsesApi.list,
+  });
+
+  const dateStr = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : null;
+
+  const { data: dayAvailability } = useQuery({
+    queryKey: ['availability-farrier-locations', dateStr],
+    queryFn: async () => {
+      const res = await api.get(`/availability/farrier-locations?date_str=${dateStr}`);
+      return res.data as {
+        date: string;
+        farriers: Array<{
+          farrier_id: number;
+          bookings: Array<{ time: string; duration?: number }>;
+        }>;
+      };
+    },
+    enabled: !!dateStr,
+    staleTime: 0,
   });
 
   const bookingMutation = useMutation({
@@ -66,6 +84,33 @@ export default function NewBooking() {
         return times;
       }) || []
     : [];
+
+  const disabledTimes = useMemo(() => {
+    if (!selectedDate || !selectedService) return new Set<string>();
+    const fid = Number(farrierId);
+    const farrierDay = dayAvailability?.farriers?.find((f) => f.farrier_id === fid);
+    if (!farrierDay?.bookings?.length) return new Set<string>();
+
+    const toMinutes = (t: string) => {
+      const [h, m] = t.split(':').map(Number);
+      return h * 60 + m;
+    };
+
+    const bookingIntervals = farrierDay.bookings.map((b) => {
+      const start = toMinutes(b.time);
+      const dur = b.duration ?? 60;
+      return { start, end: start + dur };
+    });
+
+    const disabled = new Set<string>();
+    for (const t of availableTimes) {
+      const start = toMinutes(t);
+      const end = start + (selectedService.duration ?? 60);
+      const overlaps = bookingIntervals.some((b) => !(end <= b.start || start >= b.end));
+      if (overlaps) disabled.add(t);
+    }
+    return disabled;
+  }, [availableTimes, dayAvailability, farrierId, selectedDate, selectedService]);
 
   const selectedHorse = horses?.find(h => h.id === Number(selectedHorseId));
 
@@ -329,9 +374,12 @@ export default function NewBooking() {
                     <button
                       key={time}
                       type="button"
+                      disabled={disabledTimes.has(time)}
                       onClick={() => setSelectedTime(time)}
                       className={`px-4 py-2 rounded-lg border transition-all ${
-                        selectedTime === time
+                        disabledTimes.has(time)
+                          ? 'border-earth-200 bg-earth-100 text-earth-400 cursor-not-allowed'
+                          : selectedTime === time
                           ? 'border-brand-500 bg-brand-50 text-brand-700'
                           : 'border-earth-200 hover:border-earth-300'
                       }`}
@@ -340,6 +388,11 @@ export default function NewBooking() {
                     </button>
                   ))}
                 </div>
+                {disabledTimes.size > 0 && (
+                  <p className="text-sm text-earth-500 mt-2">
+                    Gråmarkerade tider är redan bokade.
+                  </p>
+                )}
               </div>
             )}
 

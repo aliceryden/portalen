@@ -202,8 +202,8 @@ async def create_booking(
         if not (booking_end <= existing_start or booking_start >= existing_end):
             existing_time = existing_booking.scheduled_date.strftime('%Y-%m-%d %H:%M')
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Hovslagaren har redan en bokning vid {existing_time}. Välj en annan tid."
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Tiden är redan bokad ({existing_time}). Välj en annan tid."
             )
     
     # Create booking data with UTC datetime
