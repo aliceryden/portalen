@@ -49,16 +49,8 @@ export default function HomePage() {
             </div>
             
             {/* Stats */}
-            <div className="flex flex-wrap gap-8 mt-12 animate-slide-up" style={{ animationDelay: '300ms' }}>
-              <div>
-                <p className="text-3xl font-display font-bold text-white">500+</p>
-                <p className="text-earth-400">Hovslagare</p>
-              </div>
-              <div>
-                <p className="text-3xl font-display font-bold text-white">10,000+</p>
-                <p className="text-earth-400">Nöjda hästägare</p>
-              </div>
-              {ratingData && ratingData.average_rating > 0 && (
+            {ratingData && ratingData.average_rating > 0 && (
+              <div className="flex flex-wrap gap-8 mt-12 animate-slide-up" style={{ animationDelay: '300ms' }}>
                 <div>
                   <div className="flex items-center gap-2">
                     <p className="text-3xl font-display font-bold text-white">
@@ -68,8 +60,8 @@ export default function HomePage() {
                   </div>
                   <p className="text-earth-400">Snittbetyg</p>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
         
