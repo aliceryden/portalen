@@ -143,9 +143,8 @@ export default function FarriersPage() {
     }
   }, [selectedHorse, searchMode]);
 
-  // Auto-collapse the filter panel when the user scrolls down towards the map.
-  // Note: scrolling over the Leaflet map often zooms the map instead of scrolling the page,
-  // so we also use IntersectionObserver to collapse as soon as the map is in view.
+  // Auto-collapse the date/time filter section when the user scrolls down towards the map.
+  // Important: keep filters visible on initial page load; only collapse after the user actually scrolls.
   useEffect(() => {
     if (viewMode !== 'map') {
       setFiltersCollapsed(false);
@@ -162,10 +161,17 @@ export default function FarriersPage() {
       // - Expand only when the user scrolls up enough
       const COLLAPSE_AT = 260;
       const EXPAND_AT = 360;
+      const HAS_SCROLLED_AT = 80;
 
       setFiltersCollapsed((prev) => {
-        const next = prev ? mapTop < EXPAND_AT : mapTop < COLLAPSE_AT;
-        if (next) setShowFilters(false);
+        const hasScrolled = window.scrollY > HAS_SCROLLED_AT;
+        // Only collapse after user has scrolled a bit; otherwise keep it visible even if the map is in view.
+        const next = prev
+          ? hasScrolled && mapTop < EXPAND_AT
+          : hasScrolled && mapTop < COLLAPSE_AT;
+        if (next) {
+          setShowFilters(false);
+        }
         return next;
       });
     };
@@ -175,26 +181,9 @@ export default function FarriersPage() {
       raf = requestAnimationFrame(updateCollapsed);
     };
 
-    // Also observe the map entering view (robust when scrolling over the map).
-    let observer: IntersectionObserver | null = null;
-    if (mapContainerRef.current && 'IntersectionObserver' in window) {
-      observer = new IntersectionObserver(
-        (entries) => {
-          const entry = entries[0];
-          if (entry?.isIntersecting) {
-            setFiltersCollapsed(true);
-            setShowFilters(false);
-          }
-        },
-        { threshold: 0.01 }
-      );
-      observer.observe(mapContainerRef.current);
-    }
-
     window.addEventListener('scroll', onScroll, { passive: true });
     updateCollapsed();
     return () => {
-      observer?.disconnect();
       cancelAnimationFrame(raf);
       window.removeEventListener('scroll', onScroll);
     };
@@ -534,13 +523,14 @@ export default function FarriersPage() {
 
           {/* Date & Time Filter + Advanced Filters (auto-collapsible when map is in view) */}
           <div
-            className={`mt-4 grid transition-[grid-template-rows,opacity,transform] duration-300 ease-in-out ${
-              filtersCollapsed
-                ? 'grid-rows-[0fr] opacity-0 -translate-y-2 pointer-events-none'
-                : 'grid-rows-[1fr] opacity-100 translate-y-0'
-            }`}
+            className="mt-4 grid transition-[grid-template-rows] duration-300 ease-in-out"
+            style={{ gridTemplateRows: filtersCollapsed ? '0fr' : '1fr' }}
           >
-            <div className="min-h-0 overflow-hidden">
+            <div
+              className={`min-h-0 overflow-hidden transition-[opacity,transform] duration-300 ease-in-out ${
+                filtersCollapsed ? 'opacity-0 -translate-y-2 pointer-events-none' : 'opacity-100 translate-y-0'
+              }`}
+            >
               <div className="p-4 bg-earth-50 rounded-xl">
                 <div className="flex flex-col md:flex-row md:items-center gap-4">
                   {/* Date Selection */}
