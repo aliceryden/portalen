@@ -43,17 +43,26 @@ export default function FarrierBookings() {
   const queryClient = useQueryClient();
 
   const { data: bookings, isLoading } = useQuery({
-    queryKey: ['farrier-bookings', statusFilter],
-    queryFn: () => bookingsApi.list(statusFilter || undefined),
+    // Fetch ALL bookings once; filter client-side so "Alla" always includes pending,
+    // and we can show pending count even when a different filter tab is selected.
+    queryKey: ['farrier-bookings'],
+    queryFn: () => bookingsApi.list(),
+    refetchOnWindowFocus: true,
   });
+
+  const filteredBookings = useMemo(() => {
+    if (!bookings) return [];
+    if (!statusFilter) return bookings;
+    return bookings.filter((b) => b.status === statusFilter);
+  }, [bookings, statusFilter]);
 
   // Group bookings by day
   const dayGroups = useMemo(() => {
-    if (!bookings?.length) return [];
+    if (!filteredBookings.length) return [];
 
     const groups: Record<string, DayGroup> = {};
     
-    bookings.forEach(booking => {
+    filteredBookings.forEach(booking => {
       if (!booking.scheduled_date) return;
       
       const date = startOfDay(parseISO(booking.scheduled_date));
@@ -82,7 +91,7 @@ export default function FarrierBookings() {
 
     // Sort groups by date
     return Object.values(groups).sort((a, b) => a.date.getTime() - b.date.getTime());
-  }, [bookings]);
+  }, [filteredBookings]);
 
   // Auto-expand today and tomorrow
   useMemo(() => {
@@ -360,7 +369,7 @@ export default function FarrierBookings() {
         <div className="flex justify-center py-20">
           <div className="w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
         </div>
-      ) : bookings?.length ? (
+      ) : filteredBookings.length ? (
         viewMode === 'days' ? (
           // Day View
           <div className="space-y-3">
@@ -425,7 +434,7 @@ export default function FarrierBookings() {
         ) : (
           // List View
           <div className="space-y-4">
-            {bookings.map((booking) => (
+            {filteredBookings.map((booking) => (
               <div key={booking.id} className="card p-4 sm:p-6">
                 <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-6">
                   {/* Date/Time */}
