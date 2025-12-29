@@ -330,7 +330,7 @@ export default function AvailabilityMap() {
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-3 border-2 border-dashed border-brand-500 rounded opacity-50"></div>
-                    <span>Tillgängligt område (~15 km)</span>
+                    <span>Tillgängligt område</span>
                   </div>
                 </div>
               </div>
