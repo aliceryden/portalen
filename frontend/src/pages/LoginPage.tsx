@@ -9,9 +9,11 @@ import type { LoginFormData } from '../types';
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const { login, isLoading, isAuthenticated, user } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
   
   const from = (location.state as { from?: string })?.from || '/';
 
@@ -31,6 +33,7 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginFormData) => {
     try {
+      setFormError(null);
       await login(data.email, data.password);
       toast.success('Välkommen tillbaka!');
       
@@ -50,6 +53,10 @@ export default function LoginPage() {
       }
     } catch (error: unknown) {
       const err = error as { response?: { data?: { detail?: string } } };
+      const message =
+        err.response?.data?.detail ||
+        'Inloggningen misslyckades. Kontrollera e-post/lösenord eller att backend är igång.';
+      setFormError(`${message} (API: ${apiUrl})`);
       toast.error(err.response?.data?.detail || 'Inloggningen misslyckades');
     }
   };
@@ -69,6 +76,25 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            {formError && (
+              <div className="p-4 bg-red-50 border border-red-200">
+                <p className="text-sm text-red-700 flex items-start gap-2">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                  <span>{formError}</span>
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    useAuthStore.getState().logout();
+                    window.location.reload();
+                  }}
+                  className="mt-3 text-sm text-red-700 underline hover:text-red-800"
+                >
+                  Rensa session och försök igen
+                </button>
+              </div>
+            )}
+
             {/* Email */}
             <div>
               <label htmlFor="email" className="label">E-postadress</label>
