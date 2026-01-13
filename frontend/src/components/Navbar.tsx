@@ -46,18 +46,18 @@ export default function Navbar() {
   }, [showUserMenu]);
 
   return (
-    <nav className="bg-white/80 backdrop-blur-lg border-b border-earth-100 sticky top-0 z-50">
+    <nav className="bg-white border-b border-earth-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
+        <div className="flex justify-between h-[72px]">
           {/* Logo */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-brand-500 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-forest-600 rounded-none flex items-center justify-center">
                 <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 2C8 2 5 6 5 12c0 4 2 7 2 7l2-1s-2-3-2-6c0-5 3-8 5-8s5 3 5 8c0 3-2 6-2 6l2 1s2-3 2-7c0-6-3-10-7-10z"/>
                 </svg>
               </div>
-              <span className="font-display text-xl font-semibold text-earth-900">Portalen</span>
+              <span className="text-xl font-semibold tracking-tight text-earth-900">Portalen</span>
             </Link>
           </div>
 
@@ -92,7 +92,7 @@ export default function Navbar() {
               <div className="relative" ref={userMenuRef}>
                 <button
                   onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-earth-100 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 border border-transparent hover:border-earth-200 hover:bg-earth-50 transition-colors"
                 >
                   <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center overflow-hidden">
                     {user?.profile_image ? (
@@ -109,7 +109,7 @@ export default function Navbar() {
                 </button>
 
                 {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-earth-100 py-2 animate-fade-in">
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-none shadow-lg border border-earth-200 py-2 animate-fade-in">
                     <div className="px-4 py-2 border-b border-earth-100">
                       <p className="font-medium text-earth-900">{user?.first_name} {user?.last_name}</p>
                       <p className="text-sm text-earth-500">{user?.email}</p>
@@ -183,7 +183,7 @@ export default function Navbar() {
           <div className="md:hidden flex items-center">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="p-2 rounded-lg text-earth-600 hover:bg-earth-100"
+              className="p-2 border border-earth-200 text-earth-700 hover:bg-earth-50"
             >
               {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -200,14 +200,14 @@ export default function Navbar() {
                 <Link
                   to="/farriers"
                   onClick={() => setIsOpen(false)}
-                  className="block px-4 py-3 rounded-xl text-earth-700 hover:bg-earth-50"
+                  className="block px-4 py-3 border border-transparent text-earth-700 hover:border-earth-200 hover:bg-earth-50"
                 >
                   Hitta hovslagare
                 </Link>
                 <Link
                   to="/availability"
                   onClick={() => setIsOpen(false)}
-                  className="block px-4 py-3 rounded-xl text-earth-700 hover:bg-earth-50"
+                  className="block px-4 py-3 border border-transparent text-earth-700 hover:border-earth-200 hover:bg-earth-50"
                 >
                   Karta
                 </Link>
@@ -219,21 +219,21 @@ export default function Navbar() {
                 <Link
                   to="/farrier/bookings"
                   onClick={() => setIsOpen(false)}
-                  className="block px-4 py-3 rounded-xl text-earth-700 hover:bg-earth-50"
+                  className="block px-4 py-3 border border-transparent text-earth-700 hover:border-earth-200 hover:bg-earth-50"
                 >
                   Bokningar
                 </Link>
                 <Link
                   to="/farrier/schedule"
                   onClick={() => setIsOpen(false)}
-                  className="block px-4 py-3 rounded-xl text-earth-700 hover:bg-earth-50"
+                  className="block px-4 py-3 border border-transparent text-earth-700 hover:border-earth-200 hover:bg-earth-50"
                 >
                   Schema
                 </Link>
                 <Link
                   to="/farrier/services"
                   onClick={() => setIsOpen(false)}
-                  className="block px-4 py-3 rounded-xl text-earth-700 hover:bg-earth-50"
+                  className="block px-4 py-3 border border-transparent text-earth-700 hover:border-earth-200 hover:bg-earth-50"
                 >
                   Tjänster
                 </Link>
@@ -245,14 +245,14 @@ export default function Navbar() {
                 <Link
                   to={getDashboardLink()}
                   onClick={() => setIsOpen(false)}
-                  className="block px-4 py-3 rounded-xl text-earth-700 hover:bg-earth-50"
+                  className="block px-4 py-3 border border-transparent text-earth-700 hover:border-earth-200 hover:bg-earth-50"
                 >
                   Dashboard
                 </Link>
                 <Link
                   to="/settings"
                   onClick={() => setIsOpen(false)}
-                  className="block px-4 py-3 rounded-xl text-earth-700 hover:bg-earth-50"
+                  className="block px-4 py-3 border border-transparent text-earth-700 hover:border-earth-200 hover:bg-earth-50"
                 >
                   Inställningar
                 </Link>
@@ -261,7 +261,7 @@ export default function Navbar() {
                     handleLogout();
                     setIsOpen(false);
                   }}
-                  className="block w-full text-left px-4 py-3 rounded-xl text-red-600 hover:bg-red-50"
+                  className="block w-full text-left px-4 py-3 border border-transparent text-red-600 hover:border-red-200 hover:bg-red-50"
                 >
                   Logga ut
                 </button>
@@ -271,14 +271,14 @@ export default function Navbar() {
                 <Link
                   to="/login"
                   onClick={() => setIsOpen(false)}
-                  className="block px-4 py-3 rounded-xl text-earth-700 hover:bg-earth-50"
+                  className="block px-4 py-3 border border-transparent text-earth-700 hover:border-earth-200 hover:bg-earth-50"
                 >
                   Logga in
                 </Link>
                 <Link
                   to="/register"
                   onClick={() => setIsOpen(false)}
-                  className="block px-4 py-3 rounded-xl bg-brand-600 text-white text-center"
+                  className="block px-4 py-3 bg-forest-600 text-white text-center"
                 >
                   Registrera
                 </Link>

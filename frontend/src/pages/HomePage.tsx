@@ -5,49 +5,46 @@ export default function HomePage() {
   return (
     <div className="overflow-hidden">
       {/* Hero Section */}
-      <section className="relative min-h-[90vh] flex items-center">
-        {/* Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-earth-900 via-earth-800 to-brand-900">
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.03%22%3E%3Cpath%20d%3D%22M36%2034v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6%2034v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6%204V0H4v4H0v2h4v4h2V6h4V4H6z%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E')] opacity-50"></div>
-        </div>
-        
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-          <div className="max-w-3xl">
-            <h1 className="font-display text-5xl md:text-7xl font-bold text-white mb-6 animate-fade-in">
-              Hitta din
-              <span className="text-brand-400 block">hovslagare</span>
-            </h1>
-            <p className="text-xl text-earth-300 mb-8 animate-slide-up" style={{ animationDelay: '100ms' }}>
-              Sveriges smartaste sätt att boka professionell hovvård. Sök, jämför och boka enkelt online
-            </p>
-            
-            {/* Search Box */}
-            <div className="bg-white rounded-2xl p-2 shadow-2xl animate-slide-up" style={{ animationDelay: '200ms' }}>
-              <div className="flex flex-col md:flex-row gap-2">
-                <div className="flex-1 flex items-center gap-3 px-4 py-3 bg-earth-50 rounded-xl">
-                  <MapPin className="w-5 h-5 text-earth-400" />
-                  <input
-                    type="text"
-                    placeholder="Var befinner du dig?"
-                    className="w-full bg-transparent focus:outline-none text-earth-800 placeholder:text-earth-400"
-                  />
+      <section className="relative">
+        <div className="grid lg:grid-cols-2 min-h-[92vh]">
+          {/* Left panel (visual) */}
+          <div className="relative hidden lg:block bg-earth-100">
+            <div className="absolute inset-0 bg-[url('/horseshoe.svg')] bg-repeat opacity-[0.06]" />
+            <div className="absolute inset-0 bg-gradient-to-br from-earth-900/15 via-transparent to-forest-900/10" />
+          </div>
+
+          {/* Right panel (content) */}
+          <div className="relative bg-forest-800 text-white">
+            <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.04%22%3E%3Cpath%20d%3D%22M36%2034v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6%2034v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6%204V0H4v4H0v2h4v4h2V6h4V4H6z%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E')]" />
+            <div className="relative max-w-2xl px-6 sm:px-10 lg:px-16 py-20 lg:py-24 flex flex-col justify-center min-h-[92vh]">
+              <h1 className="text-5xl md:text-6xl font-bold leading-[1.05] tracking-tight mb-6">
+                Boka hovslagare
+                <span className="block text-forest-200">snabbt och tryggt</span>
+              </h1>
+              <p className="text-lg md:text-xl text-forest-100/90 mb-10 max-w-xl">
+                Sök i ditt område, jämför profiler och boka tider online. Enkelt för hästägare — smidigt för hovslagare.
+              </p>
+
+              {/* Search Box */}
+              <div className="bg-white text-earth-900 border border-earth-200 shadow-lg p-2">
+                <div className="flex flex-col md:flex-row gap-2">
+                  <div className="flex-1 flex items-center gap-3 px-4 py-3 bg-earth-50 border border-earth-200">
+                    <MapPin className="w-5 h-5 text-earth-400" />
+                    <input
+                      type="text"
+                      placeholder="Sök på område"
+                      className="w-full bg-transparent focus:outline-none text-earth-800 placeholder:text-earth-400"
+                    />
+                  </div>
+                  <Link to="/farriers" className="btn-primary px-8">
+                    <Search className="w-5 h-5" />
+                    Sök
+                  </Link>
                 </div>
-                <Link
-                  to="/farriers"
-                  className="btn-primary px-8"
-                >
-                  <Search className="w-5 h-5" />
-                  Sök hovslagare
-                </Link>
               </div>
             </div>
-            
-            {/* Stats (removed) */}
           </div>
         </div>
-        
-        {/* Decorative Elements */}
-        <div className="absolute bottom-0 right-0 w-1/3 h-1/2 bg-gradient-to-tl from-brand-500/20 to-transparent rounded-tl-full"></div>
       </section>
 
       {/* How it Works */}
@@ -82,13 +79,13 @@ export default function HomePage() {
             ].map((step, index) => (
               <div
                 key={index}
-                className="relative p-8 rounded-2xl bg-gradient-to-br from-brand-50 to-earth-50 group hover:shadow-xl transition-all duration-300"
+                className="relative p-8 border border-earth-200 bg-white group hover:shadow-md transition-all duration-300"
               >
-                <div className="absolute -top-4 -left-4 w-12 h-12 bg-brand-500 rounded-xl flex items-center justify-center text-white font-display font-bold text-xl shadow-lg">
+                <div className="absolute -top-4 -left-4 w-12 h-12 bg-forest-700 rounded-none flex items-center justify-center text-white font-bold text-xl shadow-md">
                   {index + 1}
                 </div>
-                <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center mb-6 shadow-sm group-hover:scale-110 transition-transform">
-                  <step.icon className="w-7 h-7 text-brand-600" />
+                <div className="w-14 h-14 bg-earth-50 border border-earth-200 rounded-none flex items-center justify-center mb-6">
+                  <step.icon className="w-7 h-7 text-forest-700" />
                 </div>
                 <h3 className="font-display text-xl font-semibold text-earth-900 mb-3">
                   {step.title}

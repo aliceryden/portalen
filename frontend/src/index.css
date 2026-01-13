@@ -18,19 +18,19 @@
 
 @layer components {
   .btn {
-    @apply inline-flex items-center justify-center gap-2 px-6 py-3 font-medium rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 font-medium rounded-none transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
   }
   
   .btn-primary {
-    @apply btn bg-brand-600 text-white hover:bg-brand-700 focus:ring-brand-500 shadow-lg shadow-brand-500/25 hover:shadow-xl hover:shadow-brand-500/30;
+    @apply btn bg-forest-600 text-white hover:bg-forest-700 focus:ring-forest-500 shadow-sm shadow-earth-900/10 hover:shadow-md;
   }
   
   .btn-secondary {
-    @apply btn bg-earth-100 text-earth-800 hover:bg-earth-200 focus:ring-earth-400;
+    @apply btn bg-white text-earth-800 border border-earth-200 hover:bg-earth-50 focus:ring-earth-400;
   }
   
   .btn-outline {
-    @apply btn border-2 border-brand-600 text-brand-600 hover:bg-brand-600 hover:text-white focus:ring-brand-500;
+    @apply btn border border-earth-300 text-earth-800 hover:bg-earth-50 focus:ring-earth-400;
   }
   
   .btn-ghost {
@@ -38,7 +38,7 @@
   }
   
   .input {
-    @apply w-full px-4 py-3 bg-white border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all duration-200 placeholder:text-earth-400;
+    @apply w-full px-4 py-3 bg-white border border-earth-300 rounded-none focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent transition-all duration-200 placeholder:text-earth-400;
   }
   
   .input-error {
@@ -50,7 +50,7 @@
   }
   
   .card {
-    @apply bg-white rounded-2xl shadow-sm border border-earth-100 overflow-hidden transition-all duration-200;
+    @apply bg-white rounded-none shadow-sm border border-earth-200 overflow-hidden transition-all duration-200;
   }
   
   .card-hover {
@@ -80,7 +80,7 @@
 
 /* Leaflet map styling */
 .leaflet-container {
-  @apply rounded-xl;
+  @apply rounded-none;
   font-family: inherit;
   z-index: 10 !important;
 }
@@ -153,4 +153,11 @@
 .input[type='number'] {
   -moz-appearance: textfield; /* Firefox */
   appearance: textfield;
+}
+
+/* Global design shift: square corners for common Tailwind radii used across the app */
+.rounded-xl,
+.rounded-2xl,
+.rounded-3xl {
+  border-radius: 0 !important;
 }
