@@ -9,13 +9,15 @@ export default function HomePage() {
         <div className="grid lg:grid-cols-2 min-h-[92vh]">
           {/* Left panel (visual) */}
           <div className="relative hidden lg:block bg-earth-100">
-            <div className="absolute inset-0 bg-[url('/horseshoe.svg')] bg-repeat opacity-[0.06]" />
-            <div className="absolute inset-0 bg-gradient-to-br from-earth-900/15 via-transparent to-forest-900/10" />
+            <div className="absolute inset-0 bg-[url('/horseshoe.svg')] bg-repeat opacity-[0.05]" />
+            <div className="absolute inset-0 bg-gradient-to-br from-earth-900/10 via-transparent to-forest-900/10" />
+            <div className="absolute inset-0 bg-gradient-to-r from-earth-100 via-earth-100/70 to-transparent" />
           </div>
 
           {/* Right panel (content) */}
-          <div className="relative bg-forest-800 text-white">
+          <div className="relative bg-gradient-to-b from-forest-900 to-forest-800 text-white">
             <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.04%22%3E%3Cpath%20d%3D%22M36%2034v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6%2034v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6%204V0H4v4H0v2h4v4h2V6h4V4H6z%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E')]" />
+            <div className="absolute inset-0 bg-gradient-to-l from-forest-900/10 via-transparent to-transparent" />
             <div className="relative max-w-2xl px-6 sm:px-10 lg:px-16 py-20 lg:py-24 flex flex-col justify-center min-h-[92vh]">
               <h1 className="text-5xl md:text-6xl font-bold leading-[1.05] tracking-tight mb-6">
                 Boka hovslagare
@@ -26,7 +28,7 @@ export default function HomePage() {
               </p>
 
               {/* Search Box */}
-              <div className="bg-white text-earth-900 border border-earth-200 shadow-lg p-2">
+              <div className="bg-white/95 text-earth-900 border border-earth-200/70 shadow-xl p-2">
                 <div className="flex flex-col md:flex-row gap-2">
                   <div className="flex-1 flex items-center gap-3 px-4 py-3 bg-earth-50 border border-earth-200">
                     <MapPin className="w-5 h-5 text-earth-400" />

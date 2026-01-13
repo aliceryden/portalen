@@ -8,7 +8,10 @@
   }
   
   body {
-    @apply font-sans text-earth-900 bg-brand-50 antialiased;
+    @apply font-sans text-earth-900 bg-earth-50 antialiased;
+    background-image:
+      radial-gradient(1200px 600px at 70% -10%, rgba(86, 117, 86, 0.10), transparent 60%),
+      radial-gradient(900px 500px at -10% 20%, rgba(212, 132, 74, 0.08), transparent 55%);
   }
   
   h1, h2, h3, h4, h5, h6 {
@@ -22,15 +25,16 @@
   }
   
   .btn-primary {
-    @apply btn bg-forest-600 text-white hover:bg-forest-700 focus:ring-forest-500 shadow-sm shadow-earth-900/10 hover:shadow-md;
+    @apply btn text-white focus:ring-forest-500 shadow-sm hover:shadow-md;
+    background-image: linear-gradient(180deg, #567556 0%, #435d43 100%);
   }
   
   .btn-secondary {
-    @apply btn bg-white text-earth-800 border border-earth-200 hover:bg-earth-50 focus:ring-earth-400;
+    @apply btn bg-white/90 text-earth-800 border border-earth-200/70 hover:bg-white focus:ring-earth-400 shadow-sm hover:shadow-md;
   }
   
   .btn-outline {
-    @apply btn border border-earth-300 text-earth-800 hover:bg-earth-50 focus:ring-earth-400;
+    @apply btn border border-earth-300/70 text-earth-800 hover:bg-white/70 focus:ring-earth-400;
   }
   
   .btn-ghost {
@@ -38,7 +42,7 @@
   }
   
   .input {
-    @apply w-full px-4 py-3 bg-white border border-earth-300 rounded-none focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent transition-all duration-200 placeholder:text-earth-400;
+    @apply w-full px-4 py-3 bg-white/90 border border-earth-300/70 rounded-none focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent transition-all duration-200 placeholder:text-earth-400;
   }
   
   .input-error {
@@ -50,11 +54,13 @@
   }
   
   .card {
-    @apply bg-white rounded-none shadow-sm border border-earth-200 overflow-hidden transition-all duration-200;
+    @apply bg-white/90 rounded-none border border-earth-200/70 overflow-hidden transition-all duration-200;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.03), 0 8px 24px rgba(0,0,0,0.06);
   }
   
   .card-hover {
-    @apply card hover:shadow-lg hover:border-earth-200 hover:-translate-y-1;
+    @apply card hover:border-earth-200 hover:-translate-y-0.5;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.03), 0 14px 34px rgba(0,0,0,0.08);
   }
   
   .badge {
