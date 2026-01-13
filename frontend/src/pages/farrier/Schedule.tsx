@@ -830,14 +830,19 @@ export default function FarrierSchedule() {
                       </div>
                       <div>
                         <label className="label">Reseavgift (kr/mil)</label>
-                        <input
-                          type="number"
-                          inputMode="numeric"
-                          className="input"
-                          placeholder="0"
-                          value={newArea.travel_fee || ''}
-                          onChange={(e) => setNewArea({ ...newArea, travel_fee: Number(e.target.value) || 0 })}
-                        />
+                        <div className="relative">
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            className="input pr-16"
+                            placeholder="0"
+                            value={newArea.travel_fee || ''}
+                            onChange={(e) => setNewArea({ ...newArea, travel_fee: Number(e.target.value) || 0 })}
+                          />
+                          <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-sm text-earth-400">
+                            kr/mil
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>

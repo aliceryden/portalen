@@ -143,3 +143,14 @@
 .animate-stagger > *:nth-child(5) { animation-delay: 200ms; }
 .animate-stagger > *:nth-child(6) { animation-delay: 250ms; }
 
+/* Hide number input spinners (price steppers) */
+.input[type='number']::-webkit-outer-spin-button,
+.input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.input[type='number'] {
+  -moz-appearance: textfield; /* Firefox */
+  appearance: textfield;
+}
