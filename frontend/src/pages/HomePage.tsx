@@ -28,9 +28,9 @@ export default function HomePage() {
               </p>
 
               {/* Search Box */}
-              <div className="bg-white/95 text-earth-900 border border-earth-200/70 shadow-xl p-2">
+              <div className="bg-white/90 text-earth-900 shadow-2xl p-2 ring-1 ring-white/40 backdrop-blur-sm">
                 <div className="flex flex-col md:flex-row gap-2">
-                  <div className="flex-1 flex items-center gap-3 px-4 py-3 bg-earth-50 border border-earth-200">
+                  <div className="flex-1 flex items-center gap-3 px-4 py-3 bg-white/70 ring-1 ring-earth-200/40 backdrop-blur-sm">
                     <MapPin className="w-5 h-5 text-earth-400" />
                     <input
                       type="text"
