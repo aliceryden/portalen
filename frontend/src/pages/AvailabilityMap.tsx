@@ -118,7 +118,7 @@ export default function AvailabilityMap() {
   return (
     <div className="min-h-[calc(100vh-4rem)]">
       {/* Header */}
-      <div className="bg-white border-b border-earth-100">
+      <div className="bg-white/80 backdrop-blur-md border-b border-earth-200/70 sticky top-16 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
@@ -131,10 +131,10 @@ export default function AvailabilityMap() {
             </div>
 
             {/* Date Navigation */}
-            <div className="flex items-center gap-2 bg-earth-50 rounded-xl p-1">
+            <div className="flex items-center gap-2 bg-earth-50/70 ring-1 ring-earth-200/50 rounded-full p-1">
               <button
                 onClick={() => navigateDay(-1)}
-                className="p-2 hover:bg-white rounded-lg transition-colors"
+                className="p-2 hover:bg-white rounded-full transition-colors"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
@@ -150,7 +150,7 @@ export default function AvailabilityMap() {
               
               <button
                 onClick={() => navigateDay(1)}
-                className="p-2 hover:bg-white rounded-lg transition-colors"
+                className="p-2 hover:bg-white rounded-full transition-colors"
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
@@ -164,7 +164,7 @@ export default function AvailabilityMap() {
               <div>
                 <div className="flex gap-2">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 px-4 py-3 bg-earth-50 rounded-xl border border-earth-200">
+                    <div className="flex items-center gap-3 px-4 py-3 bg-white/70 ring-1 ring-earth-200/40 backdrop-blur-sm">
                       <Search className="w-5 h-5 text-earth-400" />
                       <input
                         list="area-options"
@@ -196,7 +196,7 @@ export default function AvailabilityMap() {
               {/* Time Dropdown */}
               <div>
                 <div className="relative">
-                  <div className="flex items-center gap-3 px-4 py-3 bg-earth-50 rounded-xl border border-earth-200">
+                  <div className="flex items-center gap-3 px-4 py-3 bg-white/70 ring-1 ring-earth-200/40 backdrop-blur-sm">
                     <Clock className="w-5 h-5 text-earth-400" />
                     <select
                       className="w-full bg-transparent focus:outline-none text-earth-800 placeholder:text-earth-400 appearance-none pr-8"
@@ -235,10 +235,107 @@ export default function AvailabilityMap() {
             <div className="w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
           </div>
         ) : (
-          <div className="grid lg:grid-cols-3 gap-6">
-            {/* Map */}
-            <div className="lg:col-span-2">
-              <div className="card overflow-hidden h-[500px] lg:h-[600px]">
+          <div className="grid lg:grid-cols-5 gap-6 items-start">
+            {/* List (left) */}
+            <div className="lg:col-span-2 space-y-4 order-2 lg:order-1">
+              <div className="card p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <h2 className="font-display text-lg font-semibold text-earth-900 mb-1">
+                      Hovslagare {format(selectedDate, 'd/M', { locale: sv })}
+                      {selectedTime && ` kl ${selectedTime}`}
+                    </h2>
+                    <p className="text-sm text-earth-500">
+                      {filteredFarriers.length} hovslagare {selectedTime ? 'lediga' : 'har bokningar'}
+                    </p>
+                  </div>
+                  <div className="hidden lg:flex gap-2">
+                    <button className="btn-secondary rounded-full">Sortera</button>
+                    <button className="btn-secondary rounded-full">Filter</button>
+                  </div>
+                </div>
+
+                {filteredFarriers.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Calendar className="w-12 h-12 text-earth-300 mx-auto mb-3" />
+                    <p className="text-earth-500">
+                      {selectedTime
+                        ? `Inga hovslagare lediga kl ${selectedTime}`
+                        : 'Inga bokningar denna dag'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 mt-4">
+                    {filteredFarriers.map((farrier, index) => (
+                      <div
+                        key={farrier.farrier_id}
+                        className="p-4 bg-white/60 ring-1 ring-earth-200/40 hover:bg-white/80 transition-colors"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div
+                            className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm"
+                            style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                          >
+                            {farrier.farrier_name.split(' ').map(n => n[0]).join('')}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-earth-900 truncate">
+                              {farrier.business_name || farrier.farrier_name}
+                            </h3>
+                            <p className="text-sm text-earth-500">{farrier.farrier_name}</p>
+
+                            {farrier.available_times.length > 0 && (
+                              <div className="mt-2">
+                                <p className="text-xs text-green-700 font-medium mb-1">Lediga tider:</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {(selectedTime
+                                    ? [selectedTime, ...farrier.available_times.filter(t => t !== selectedTime).slice(0, 3)]
+                                    : farrier.available_times.slice(0, 4)
+                                  ).map(time => (
+                                    <span
+                                      key={time}
+                                      className={`px-2 py-0.5 rounded-full text-xs ${
+                                        time === selectedTime
+                                          ? 'bg-forest-700 text-white font-medium'
+                                          : 'bg-forest-100 text-forest-800'
+                                      }`}
+                                    >
+                                      {time}
+                                    </span>
+                                  ))}
+                                  {farrier.available_times.length > 4 && (
+                                    <span className="text-xs text-earth-500">
+                                      +{farrier.available_times.length - 4}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Info Box */}
+              <div className="card p-4 bg-white/70">
+                <h3 className="font-medium text-earth-900 mb-2 flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-forest-700" />
+                  Hur det fungerar
+                </h3>
+                <p className="text-sm text-earth-600">
+                  När en hovslagare har en bokning i ett område blir de
+                  <strong> tillgängliga för fler bokningar</strong> i närliggande kommuner samma dag.
+                  Detta sparar restid och ger bättre tillgänglighet!
+                </p>
+              </div>
+            </div>
+
+            {/* Map (right) */}
+            <div className="lg:col-span-3 order-1 lg:order-2">
+              <div className="card overflow-hidden h-[480px] lg:h-[calc(100vh-14rem)] lg:sticky lg:top-24">
                 <MapContainer
                   center={[59.3293, 18.0686]}
                   zoom={9}
@@ -372,7 +469,7 @@ export default function AvailabilityMap() {
               </div>
               
               {/* Legend */}
-              <div className="mt-4 p-4 bg-white rounded-xl border border-earth-100">
+              <div className="mt-4 p-4 bg-white/70 ring-1 ring-earth-200/50">
                 <h3 className="font-medium text-earth-900 mb-3">Förklaring</h3>
                 <div className="flex flex-wrap gap-4 text-sm">
                   <div className="flex items-center gap-2">
@@ -384,118 +481,6 @@ export default function AvailabilityMap() {
                     <span>Tillgängligt område</span>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            {/* Sidebar - Farrier List */}
-            <div className="space-y-4">
-              <div className="card p-4">
-                <h2 className="font-display text-lg font-semibold text-earth-900 mb-1">
-                  Hovslagare {format(selectedDate, 'd/M', { locale: sv })}
-                  {selectedTime && ` kl ${selectedTime}`}
-                </h2>
-                <p className="text-sm text-earth-500 mb-4">
-                  {filteredFarriers.length} hovslagare {selectedTime ? 'lediga' : 'har bokningar'}
-                </p>
-                
-                {filteredFarriers.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Calendar className="w-12 h-12 text-earth-300 mx-auto mb-3" />
-                    <p className="text-earth-500">
-                      {selectedTime 
-                        ? `Inga hovslagare lediga kl ${selectedTime}` 
-                        : 'Inga bokningar denna dag'}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {filteredFarriers.map((farrier, index) => (
-                      <div
-                        key={farrier.farrier_id}
-                        className="p-4 bg-earth-50 rounded-xl hover:bg-earth-100 transition-colors"
-                      >
-                        <div className="flex items-start gap-3">
-                          <div
-                            className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm"
-                            style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                          >
-                            {farrier.farrier_name.split(' ').map(n => n[0]).join('')}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-medium text-earth-900 truncate">
-                              {farrier.business_name || farrier.farrier_name}
-                            </h3>
-                            <p className="text-sm text-earth-500">{farrier.farrier_name}</p>
-                            
-                            {/* Today's areas */}
-                            <div className="mt-2">
-                              <p className="text-xs text-earth-400 mb-1">Befinner sig i:</p>
-                              <div className="flex flex-wrap gap-1">
-                                {farrier.booked_areas.map(area => (
-                                  <span
-                                    key={area}
-                                    className="px-2 py-0.5 bg-white text-earth-700 rounded text-xs border border-earth-200"
-                                  >
-                                    {area}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                            
-                            {/* Lediga tider */}
-                            {farrier.available_times.length > 0 && (
-                              <div className="mt-2">
-                                <p className="text-xs text-green-600 font-medium mb-1">Lediga tider:</p>
-                                <div className="flex flex-wrap gap-1">
-                                  {(selectedTime 
-                                    ? [selectedTime, ...farrier.available_times.filter(t => t !== selectedTime).slice(0, 3)]
-                                    : farrier.available_times.slice(0, 4)
-                                  ).map(time => (
-                                    <span 
-                                      key={time} 
-                                      className={`px-1.5 py-0.5 rounded text-xs ${
-                                        time === selectedTime 
-                                          ? 'bg-brand-500 text-white font-medium' 
-                                          : 'bg-green-100 text-green-700'
-                                      }`}
-                                    >
-                                      {time}
-                                    </span>
-                                  ))}
-                                  {farrier.available_times.length > 4 && (
-                                    <span className="text-xs text-earth-500">
-                                      +{farrier.available_times.length - 4}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                            
-                            {/* Bokade tider */}
-                            <div className="mt-2 text-xs text-earth-500">
-                              <Clock className="w-3 h-3 inline mr-1" />
-                              {farrier.bookings.length} bokningar: {' '}
-                              {farrier.bookings.map(b => b.time).join(', ')}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              
-              {/* Info Box */}
-              <div className="card p-4 bg-gradient-to-br from-brand-50 to-earth-50">
-                <h3 className="font-medium text-earth-900 mb-2 flex items-center gap-2">
-                  <MapPin className="w-5 h-5 text-brand-500" />
-                  Hur det fungerar
-                </h3>
-                <p className="text-sm text-earth-600">
-                  När en hovslagare har en bokning i ett område blir de 
-                  <strong> tillgängliga för fler bokningar</strong> i närliggande kommuner samma dag. 
-                  Detta sparar restid och ger bättre tillgänglighet!
-                </p>
               </div>
             </div>
           </div>

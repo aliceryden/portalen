@@ -399,7 +399,7 @@ export default function FarriersPage() {
   return (
     <div className="min-h-[calc(100vh-4rem)]">
       {/* Header */}
-      <div className="bg-white border-b border-earth-100 sticky top-16 z-40">
+      <div className="bg-white/80 backdrop-blur-md border-b border-earth-200/70 sticky top-16 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           {/* Search Mode Toggle */}
           {isAuthenticated ? (
@@ -494,16 +494,16 @@ export default function FarriersPage() {
             <div className="flex gap-2">
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`btn-secondary ${showFilters ? 'bg-earth-200' : ''}`}
+                className={`btn-secondary ${showFilters ? 'bg-white' : ''}`}
               >
                 <SlidersHorizontal className="w-5 h-5" />
                 Filter
               </button>
               
-              <div className="flex bg-earth-100 rounded-xl p-1">
+              <div className="flex bg-earth-100/70 ring-1 ring-earth-200/50 rounded-full p-1">
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`p-2 rounded-lg transition-colors ${
+                  className={`p-2 rounded-full transition-colors ${
                     viewMode === 'list' ? 'bg-white shadow-sm' : 'text-earth-500 hover:text-earth-700'
                   }`}
                 >
@@ -511,7 +511,7 @@ export default function FarriersPage() {
                 </button>
                 <button
                   onClick={() => setViewMode('map')}
-                  className={`p-2 rounded-lg transition-colors ${
+                  className={`p-2 rounded-full transition-colors ${
                     viewMode === 'map' ? 'bg-white shadow-sm' : 'text-earth-500 hover:text-earth-700'
                   }`}
                 >
@@ -531,7 +531,7 @@ export default function FarriersPage() {
                 filtersCollapsed ? 'opacity-0 -translate-y-2 pointer-events-none' : 'opacity-100 translate-y-0'
               }`}
             >
-              <div className="p-4 bg-earth-50 rounded-xl">
+              <div className="p-4 bg-earth-50/70 ring-1 ring-earth-200/50">
                 <div className="flex flex-col md:flex-row md:items-center gap-4">
                   {/* Date Selection */}
                   <div className="flex items-center gap-2">
@@ -541,7 +541,7 @@ export default function FarriersPage() {
                           setSelectedDate(null);
                           setSelectedTime(null);
                         }}
-                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
                           !selectedDate
                             ? 'bg-brand-500 text-white'
                             : 'bg-white border border-earth-200 text-earth-600 hover:bg-earth-100'
@@ -556,7 +556,7 @@ export default function FarriersPage() {
                           <button
                             key={dayOffset}
                             onClick={() => setSelectedDate(date)}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
                               isSelected
                                 ? 'bg-brand-500 text-white'
                                 : 'bg-white border border-earth-200 text-earth-600 hover:bg-earth-100'
@@ -575,7 +575,7 @@ export default function FarriersPage() {
                   <div className="mt-3 flex items-center gap-2 flex-wrap">
                     <button
                       onClick={() => setSelectedTime(null)}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
                         !selectedTime
                           ? 'bg-green-500 text-white'
                           : 'bg-white border border-earth-200 text-earth-600 hover:bg-earth-100'
@@ -587,7 +587,7 @@ export default function FarriersPage() {
                       <button
                         key={time}
                         onClick={() => setSelectedTime(time)}
-                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
                           selectedTime === time
                             ? 'bg-green-500 text-white'
                             : 'bg-white border border-earth-200 text-earth-600 hover:bg-earth-100'
@@ -613,7 +613,7 @@ export default function FarriersPage() {
 
               {/* Filters Panel */}
               {showFilters && (
-                <div className="mt-4 p-4 bg-earth-50 rounded-xl animate-fade-in">
+                <div className="mt-4 p-4 bg-earth-50/70 ring-1 ring-earth-200/50 animate-fade-in">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-semibold text-earth-900 flex items-center gap-2">
                       <Filter className="w-5 h-5" />
@@ -621,7 +621,7 @@ export default function FarriersPage() {
                     </h3>
                     <button
                       onClick={() => setShowFilters(false)}
-                      className="p-1 hover:bg-earth-200 rounded-lg"
+                      className="p-1 hover:bg-earth-200/70 rounded-full"
                     >
                       <X className="w-5 h-5" />
                     </button>
@@ -684,10 +684,12 @@ export default function FarriersPage() {
           <div className="flex items-center justify-center py-20">
             <div className="w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
           </div>
-        ) : viewMode === 'list' ? (
-            <div className="space-y-4">
+        ) : (
+          <div className="grid lg:grid-cols-5 gap-6 items-start">
+            {/* List (left) */}
+            <div className={`${viewMode === 'map' ? 'hidden lg:block' : ''} lg:col-span-2 space-y-4`}>
               {searchMode === 'horse' && selectedHorse ? (
-                <div className="p-4 bg-brand-50 rounded-xl border border-brand-200">
+                <div className="p-4 bg-brand-50/60 ring-1 ring-brand-200/50">
                   <p className="font-medium text-brand-900 mb-1">
                     Söker hovslagare för {selectedHorse.name}
                   </p>
@@ -701,113 +703,123 @@ export default function FarriersPage() {
                   )}
                 </div>
               ) : (
-                <p className="text-earth-600">
-                  {displayFarriers?.length || 0} hovslagare hittade
-                </p>
+                <div className="flex items-center justify-between">
+                  <p className="text-earth-600">
+                    {displayFarriers?.length || 0} hovslagare hittade
+                  </p>
+                  <div className="hidden lg:flex gap-2">
+                    <button className="btn-secondary rounded-full">Sortera</button>
+                    <button className="btn-secondary rounded-full" onClick={() => setShowFilters(true)}>Filter</button>
+                  </div>
+                </div>
               )}
-            
-            <div className="grid gap-4">
-              {displayFarriers?.map((farrier) => (
-                <FarrierCard key={farrier.id} farrier={farrier} />
-              ))}
-            </div>
-            
-            {displayFarriers?.length === 0 && (
-              <div className="text-center py-20">
-                <div className="w-16 h-16 bg-earth-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Search className="w-8 h-8 text-earth-400" />
-                </div>
-                <h3 className="font-semibold text-earth-900 mb-2">Inga hovslagare hittade</h3>
-                <p className="text-earth-600">Försök med en annan plats eller bredare filter</p>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div
-            ref={mapContainerRef}
-            className="h-[calc(100vh-16rem)] rounded-2xl overflow-hidden shadow-lg"
-          >
-            {displayFarriers && displayFarriers.length > 0 ? (
-              <MapContainer
-                center={getMapCenter()}
-                zoom={selectedHorse ? 11 : farriersWithCoords.length > 0 ? 10 : 6}
-                className="h-full w-full"
-                key={selectedHorse?.id || filters.city || 'default'} // Force re-render when horse or city changes
-              >
-                <TileLayer
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                />
-                
-                {/* Markers for farriers with coordinates */}
-                {farriersWithCoords.map((farrier: ExtendedFarrier) => (
-                  <Marker
-                    key={farrier.id}
-                    position={[farrier.base_latitude!, farrier.base_longitude!]}
-                    icon={markerIcon}
-                  >
-                    <Popup>
-                      <div className="p-2">
-                        <h3 className="font-semibold">
-                          {farrier.business_name || `${farrier.user_first_name} ${farrier.user_last_name}`}
-                        </h3>
-                        {farrier.user_city && (
-                          <p className="text-sm text-gray-600">{farrier.user_city}</p>
-                        )}
-                        {farrier.available_in_area && (
-                          <span className="inline-block mt-1 px-2 py-0.5 bg-forest-100 text-forest-700 rounded text-xs">
-                            Tillgänglig i området
-                          </span>
-                        )}
-                        {farrier.total_reviews > 0 && (
-                          <div className="flex items-center gap-1 text-sm mt-1">
-                            <Star className="w-4 h-4 text-amber-500 fill-current" />
-                            <span>{farrier.average_rating.toFixed(1)}</span>
-                            <span className="text-gray-500 text-xs">({farrier.total_reviews})</span>
-                          </div>
-                        )}
-                        {farrier.distance_km && (
-                          <p className="text-xs text-gray-500 mt-1">{farrier.distance_km} km bort</p>
-                        )}
-                        <Link
-                          to={`/farriers/${farrier.id}`}
-                          className="text-brand-600 text-sm hover:underline mt-2 inline-block"
-                        >
-                          Visa profil →
-                        </Link>
-                      </div>
-                    </Popup>
-                  </Marker>
+
+              <div className="grid gap-4">
+                {displayFarriers?.map((farrier) => (
+                  <FarrierCard key={farrier.id} farrier={farrier} />
                 ))}
-                
-                {/* Marker for selected horse location */}
-                {selectedHorse?.stable_latitude && selectedHorse?.stable_longitude && (
-                  <Marker
-                    position={[parseFloat(selectedHorse.stable_latitude), parseFloat(selectedHorse.stable_longitude)]}
-                    icon={new Icon({
-                      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-                      iconSize: [25, 41],
-                      iconAnchor: [12, 41],
-                    })}
-                  >
-                    <Popup>
-                      <div className="p-2">
-                        <h3 className="font-semibold">{selectedHorse.name}</h3>
-                        <p className="text-sm text-gray-600">{selectedHorse.stable_city}</p>
-                        <p className="text-xs text-gray-500">Din hästs stallplats</p>
-                      </div>
-                    </Popup>
-                  </Marker>
-                )}
-              </MapContainer>
-            ) : (
-              <div className="h-full flex items-center justify-center bg-earth-50">
-                <div className="text-center">
-                  <p className="text-earth-500 mb-2">Inga hovslagare hittade</p>
-                  <p className="text-sm text-earth-400">Försök med en annan sökning</p>
-                </div>
               </div>
-            )}
+
+              {displayFarriers?.length === 0 && (
+                <div className="text-center py-20">
+                  <div className="w-16 h-16 bg-earth-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Search className="w-8 h-8 text-earth-400" />
+                  </div>
+                  <h3 className="font-semibold text-earth-900 mb-2">Inga hovslagare hittade</h3>
+                  <p className="text-earth-600">Försök med en annan plats eller bredare filter</p>
+                </div>
+              )}
+            </div>
+
+            {/* Map (right) */}
+            <div
+              ref={mapContainerRef}
+              className={`${viewMode === 'list' ? 'hidden lg:block' : ''} lg:col-span-3`}
+            >
+              <div className="card overflow-hidden h-[420px] lg:h-[calc(100vh-14rem)] lg:sticky lg:top-24">
+                {displayFarriers && displayFarriers.length > 0 ? (
+                  <MapContainer
+                    center={getMapCenter()}
+                    zoom={selectedHorse ? 11 : farriersWithCoords.length > 0 ? 10 : 6}
+                    className="h-full w-full"
+                    key={selectedHorse?.id || filters.city || 'default'} // Force re-render when horse or city changes
+                  >
+                    <TileLayer
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                    />
+
+                    {/* Markers for farriers with coordinates */}
+                    {farriersWithCoords.map((farrier: ExtendedFarrier) => (
+                      <Marker
+                        key={farrier.id}
+                        position={[farrier.base_latitude!, farrier.base_longitude!]}
+                        icon={markerIcon}
+                      >
+                        <Popup>
+                          <div className="p-2">
+                            <h3 className="font-semibold">
+                              {farrier.business_name || `${farrier.user_first_name} ${farrier.user_last_name}`}
+                            </h3>
+                            {farrier.user_city && (
+                              <p className="text-sm text-gray-600">{farrier.user_city}</p>
+                            )}
+                            {farrier.available_in_area && (
+                              <span className="inline-block mt-1 px-2 py-0.5 bg-forest-100 text-forest-700 rounded text-xs">
+                                Tillgänglig i området
+                              </span>
+                            )}
+                            {farrier.total_reviews > 0 && (
+                              <div className="flex items-center gap-1 text-sm mt-1">
+                                <Star className="w-4 h-4 text-amber-500 fill-current" />
+                                <span>{farrier.average_rating.toFixed(1)}</span>
+                                <span className="text-gray-500 text-xs">({farrier.total_reviews})</span>
+                              </div>
+                            )}
+                            {farrier.distance_km && (
+                              <p className="text-xs text-gray-500 mt-1">{farrier.distance_km} km bort</p>
+                            )}
+                            <Link
+                              to={`/farriers/${farrier.id}`}
+                              className="text-brand-600 text-sm hover:underline mt-2 inline-block"
+                            >
+                              Visa profil →
+                            </Link>
+                          </div>
+                        </Popup>
+                      </Marker>
+                    ))}
+
+                    {/* Marker for selected horse location */}
+                    {selectedHorse?.stable_latitude && selectedHorse?.stable_longitude && (
+                      <Marker
+                        position={[parseFloat(selectedHorse.stable_latitude), parseFloat(selectedHorse.stable_longitude)]}
+                        icon={new Icon({
+                          iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                          iconSize: [25, 41],
+                          iconAnchor: [12, 41],
+                        })}
+                      >
+                        <Popup>
+                          <div className="p-2">
+                            <h3 className="font-semibold">{selectedHorse.name}</h3>
+                            <p className="text-sm text-gray-600">{selectedHorse.stable_city}</p>
+                            <p className="text-xs text-gray-500">Din hästs stallplats</p>
+                          </div>
+                        </Popup>
+                      </Marker>
+                    )}
+                  </MapContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center bg-earth-50">
+                    <div className="text-center">
+                      <p className="text-earth-500 mb-2">Inga hovslagare hittade</p>
+                      <p className="text-sm text-earth-400">Försök med en annan sökning</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </div>
