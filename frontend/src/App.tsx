@@ -12,6 +12,7 @@ import ScrollToTop from './components/ScrollToTop';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import FarriersPage from './pages/FarriersPage';
 import FarrierProfilePage from './pages/FarrierProfilePage';
 import AvailabilityMap from './pages/AvailabilityMap';
@@ -78,6 +79,7 @@ function App() {
           <Route index element={<HomePage />} />
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />
+          <Route path="forgot-password" element={<ForgotPasswordPage />} />
           <Route path="farriers" element={<FarriersPage />} />
           <Route path="farriers/:id" element={<FarrierProfilePage />} />
           <Route path="availability" element={<AvailabilityMap />} />

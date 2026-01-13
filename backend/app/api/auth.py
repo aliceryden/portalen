@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from datetime import timedelta
 
@@ -14,16 +15,20 @@ from app.core.security import (
 from app.models.user import User
 from app.models.farrier import Farrier
 from app.schemas.user import UserCreate, UserResponse
-from app.schemas.auth import Token
+from app.schemas.auth import Token, PasswordReset
 
 router = APIRouter()
+
+def _normalize_email(email: str) -> str:
+    return (email or "").strip().lower()
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register(user_data: UserCreate, db: Session = Depends(get_db)):
     """Registrera ny användare (hästägare eller hovslagare)"""
+    email = _normalize_email(user_data.email)
     # Kolla om email redan finns
-    existing_user = db.query(User).filter(User.email == user_data.email).first()
+    existing_user = db.query(User).filter(func.lower(User.email) == email).first()
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -33,7 +38,7 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
     # Skapa användare
     hashed_password = get_password_hash(user_data.password)
     db_user = User(
-        email=user_data.email,
+        email=email,
         hashed_password=hashed_password,
         first_name=user_data.first_name,
         last_name=user_data.last_name,
@@ -63,7 +68,8 @@ async def login(
     db: Session = Depends(get_db)
 ):
     """Logga in och få JWT token"""
-    user = db.query(User).filter(User.email == form_data.username).first()
+    email = _normalize_email(form_data.username)
+    user = db.query(User).filter(func.lower(User.email) == email).first()
     
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
@@ -85,6 +91,31 @@ async def login(
     )
     
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@router.post("/reset-password")
+async def reset_password(payload: PasswordReset, db: Session = Depends(get_db)):
+    """Återställ lösenord (endast intern testmiljö).
+
+    Skyddas av `PASSWORD_RESET_CODE` som måste vara satt som env-var i backend.
+    """
+    if not settings.PASSWORD_RESET_CODE:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Password reset är inte aktiverat i denna miljö"
+        )
+    if payload.reset_code != settings.PASSWORD_RESET_CODE:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Ogiltig reset-kod")
+
+    email = _normalize_email(payload.email)
+    user = db.query(User).filter(func.lower(User.email) == email).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Användaren finns inte")
+
+    user.hashed_password = get_password_hash(payload.new_password)
+    db.add(user)
+    db.commit()
+    return {"message": "Lösenord uppdaterat"}
 
 
 @router.get("/me", response_model=UserResponse)

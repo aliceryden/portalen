@@ -10,6 +10,9 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "super-secret-key-change-in-production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # 24 timmar
+
+    # Password reset (internal test use). If set, enables /auth/reset-password guarded by this code.
+    PASSWORD_RESET_CODE: Optional[str] = None
     
     # App
     DEBUG: bool = True

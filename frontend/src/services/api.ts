@@ -66,6 +66,14 @@ export const authApi = {
     return response.data;
   },
 
+  resetPassword: async (email: string, resetCode: string, newPassword: string): Promise<void> => {
+    await api.post('/auth/reset-password', {
+      email,
+      reset_code: resetCode,
+      new_password: newPassword,
+    });
+  },
+
   logout: async (): Promise<void> => {
     await api.post('/auth/logout');
     localStorage.removeItem('token');
